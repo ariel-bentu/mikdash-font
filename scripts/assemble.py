@@ -210,9 +210,16 @@ def build_font(
     fb.setupHorizontalMetrics(metrics)
     fb.setupHorizontalHeader(ascent=ASCENDER, descent=DESCENDER)
 
+    full_name = f"{family_name} {style_name}"
+    ps_name = f"{family_name}-{style_name}"
     fb.setupNameTable({
+        "copyright": "Copyright 2026, Mikdash Font Project",
         "familyName": family_name,
         "styleName": style_name,
+        "uniqueFontIdentifier": f"1.000;NONE;{ps_name}",
+        "fullName": full_name,
+        "version": "Version 1.000",
+        "psName": ps_name,
     })
 
     fb.setupOS2(
@@ -221,7 +228,16 @@ def build_font(
         sTypoLineGap=LINE_GAP,
     )
     fb.setupPost()
-    fb.setupHead(unitsPerEm=UNITS_PER_EM)
+    import calendar, time
+    now = calendar.timegm(time.gmtime())
+    fb.setupHead(unitsPerEm=UNITS_PER_EM, created=now, modified=now)
+
+    # gasp table — needed for Font Book validation
+    from fontTools.ttLib import newTable
+    gasp = newTable("gasp")
+    gasp.version = 1
+    gasp.gaspRange = {0xFFFF: 0x000A}  # symmetric smoothing + gridfit at all sizes
+    fb.font["gasp"] = gasp
 
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     fb.font.save(output_path)
