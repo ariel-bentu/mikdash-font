@@ -45,3 +45,34 @@ def test_create_regular_font(tmp_path):
     assert "cmap" in font
     assert "glyf" in font
     font.close()
+
+
+def test_font_has_combining_marks(tmp_path):
+    """Font should have combining diamond and circle marks mapped."""
+    from scripts.assemble import create_bold_font
+    from scripts.helpers import COMBINING_CIRCLE, COMBINING_DIAMOND, STANDALONE_CIRCLE
+
+    output_path = str(tmp_path / "Mikdash-Bold.ttf")
+    create_bold_font("glyphs/svg", output_path)
+
+    from fontTools.ttLib import TTFont
+    font = TTFont(output_path)
+    cmap = font.getBestCmap()
+
+    assert COMBINING_DIAMOND in cmap, "Missing combining diamond mark"
+    assert COMBINING_CIRCLE in cmap, "Missing combining circle mark"
+    assert STANDALONE_CIRCLE in cmap, "Missing standalone circle"
+    font.close()
+
+
+def test_font_has_gpos_mark_positioning(tmp_path):
+    """Font should have GPOS table with mark-to-base positioning."""
+    from scripts.assemble import create_bold_font
+
+    output_path = str(tmp_path / "Mikdash-Bold.ttf")
+    create_bold_font("glyphs/svg", output_path)
+
+    from fontTools.ttLib import TTFont
+    font = TTFont(output_path)
+    assert "GPOS" in font, "Missing GPOS table"
+    font.close()

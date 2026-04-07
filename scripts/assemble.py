@@ -13,17 +13,129 @@ from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.pens.cu2quPen import Cu2QuPen
 
+from fontTools.feaLib.builder import addOpenTypeFeaturesFromString
+from fontTools.ttLib import TTFont
+
 from scripts.helpers import (
     ASCENDER,
+    COMBINING_CIRCLE,
+    COMBINING_DIAMOND,
     DESCENDER,
     FONT_FAMILY,
     HEBREW_LETTERS,
     HOLLOW_STROKE_RATIO,
     LINE_GAP,
+    STANDALONE_CIRCLE,
     UNITS_PER_EM,
     normalize_contours,
     parse_svg_to_contours,
 )
+
+
+# ---------------------------------------------------------------------------
+# Mark codepoint mapping
+# ---------------------------------------------------------------------------
+
+MARK_CODEPOINTS = {
+    "diamond_above": COMBINING_DIAMOND,
+    "circle_above": COMBINING_CIRCLE,
+    "circle_standalone": STANDALONE_CIRCLE,
+}
+
+
+# ---------------------------------------------------------------------------
+# Programmatic mark glyph creation
+# ---------------------------------------------------------------------------
+
+
+def create_diamond_contours(size: int = 80) -> list[list[tuple]]:
+    """Create a filled diamond shape as contours (4 points: top, right, bottom, left).
+
+    The diamond is centered at the origin; callers shift it to desired position.
+    """
+    half = size // 2
+    contour = [
+        (0, half, True),       # top
+        (half, 0, True),       # right
+        (0, -half, True),      # bottom
+        (-half, 0, True),      # left
+    ]
+    return [contour]
+
+
+def create_circle_contours(
+    radius: int = 40, hollow: bool = True, segments: int = 24,
+) -> list[list[tuple]]:
+    """Create a circle as a polygon approximation.
+
+    If *hollow* is True (default for the circle mark), an inner ring with
+    reversed winding is added to punch a hole.
+    """
+    import math
+
+    outer = []
+    for i in range(segments):
+        angle = 2 * math.pi * i / segments
+        x = round(radius * math.cos(angle))
+        y = round(radius * math.sin(angle))
+        outer.append((x, y, True))
+
+    contours = [outer]
+
+    if hollow:
+        inner_radius = max(radius - 12, radius * 2 // 3)
+        inner = []
+        for i in range(segments):
+            # Reversed winding (clockwise) to create a hole
+            angle = 2 * math.pi * (segments - 1 - i) / segments
+            x = round(inner_radius * math.cos(angle))
+            y = round(inner_radius * math.sin(angle))
+            inner.append((x, y, True))
+        contours.append(inner)
+
+    return contours
+
+
+def add_mark_glyphs(
+    glyph_contours: dict[str, tuple[list[list[tuple]], int]],
+) -> None:
+    """Add diamond_above, circle_above, and circle_standalone to *glyph_contours*.
+
+    Combining marks have advance_width=0 (zero-width) and are positioned
+    above the baseline. circle_standalone has a non-zero advance width.
+    Mutates *glyph_contours* in place.
+    """
+    center_x = 250
+    mark_y = ASCENDER + 100  # above ascender line
+
+    # --- diamond_above (combining, zero-width) ---
+    diamond = create_diamond_contours(size=80)
+    diamond_shifted = []
+    for contour in diamond:
+        diamond_shifted.append(
+            [(x + center_x, y + mark_y, on) for x, y, on in contour]
+        )
+    glyph_contours["diamond_above"] = (diamond_shifted, 0)
+
+    # --- circle_above (combining, zero-width) ---
+    circle = create_circle_contours(radius=40, hollow=True, segments=24)
+    circle_shifted = []
+    for contour in circle:
+        circle_shifted.append(
+            [(x + center_x, y + mark_y, on) for x, y, on in contour]
+        )
+    glyph_contours["circle_above"] = (circle_shifted, 0)
+
+    # --- circle_standalone (visible glyph, non-zero width) ---
+    standalone = create_circle_contours(radius=40, hollow=True, segments=24)
+    standalone_y = 400  # centered vertically around midline
+    standalone_x = 60   # centered in a ~120-wide advance
+    standalone_shifted = []
+    for contour in standalone:
+        standalone_shifted.append(
+            [(x + standalone_x, y + standalone_y, on) for x, y, on in contour]
+        )
+    glyph_contours["circle_standalone"] = (standalone_shifted, 120)
 
 
 # ---------------------------------------------------------------------------
@@ -73,11 +185,13 @@ def build_font(
     """
     glyph_names = [".notdef"] + sorted(glyph_contours.keys())
 
-    # Build cmap: only map glyphs whose names appear in HEBREW_LETTERS
+    # Build cmap: map Hebrew letters and mark glyphs
     cmap = {}
     for name in glyph_names:
         if name in HEBREW_LETTERS:
             cmap[HEBREW_LETTERS[name]] = name
+        elif name in MARK_CODEPOINTS:
+            cmap[MARK_CODEPOINTS[name]] = name
 
     # Prepare advance widths — .notdef gets a default width
     default_width = UNITS_PER_EM // 2
@@ -214,6 +328,74 @@ def _contour_to_segments(
     return segments
 
 
+def add_gpos_marks(
+    font_path: str,
+    glyph_contours: dict[str, tuple[list[list[tuple]], int]],
+) -> None:
+    """Add GPOS mark-to-base positioning to an existing font.
+
+    Builds an OpenType feature definition string and compiles it into the
+    font using ``fontTools.feaLib``.
+    """
+    mark_names = [
+        name for name in ("diamond_above", "circle_above")
+        if name in glyph_contours
+    ]
+    if not mark_names:
+        return
+
+    base_names = sorted(
+        name for name in glyph_contours
+        if name not in ("diamond_above", "circle_above", "circle_standalone")
+    )
+    if not base_names:
+        return
+
+    font = TTFont(font_path)
+
+    # Anchor positions
+    # Base anchor: above the centre of each base glyph
+    # Mark anchor: at the "attachment" point of each mark
+    base_anchor_y = ASCENDER + 100
+    mark_anchor_y = ASCENDER + 100
+
+    # Build OpenType feature code
+    lines = []
+
+    # Define @bases glyph class
+    lines.append("@bases = [%s];" % " ".join(base_names))
+
+    # Define mark classes — each mark gets its own class for the "top" anchor
+    for mark_name in mark_names:
+        # The mark anchor is where the mark's own reference point is:
+        # We place it at the same (center_x, mark_y) used when drawing the glyph
+        lines.append(
+            "markClass %s <anchor 250 %d> @mark_top_%s;"
+            % (mark_name, mark_anchor_y, mark_name)
+        )
+
+    # Build the mark-to-base feature
+    lines.append("feature mark {")
+    for mark_name in mark_names:
+        lines.append("  lookup mark2base_%s {" % mark_name)
+        for base_name in base_names:
+            # Compute base anchor X as half the advance width
+            _contours, adv_w = glyph_contours[base_name]
+            anchor_x = adv_w // 2
+            lines.append(
+                "    pos base %s <anchor %d %d> mark @mark_top_%s;"
+                % (base_name, anchor_x, base_anchor_y, mark_name)
+            )
+        lines.append("  } mark2base_%s;" % mark_name)
+    lines.append("} mark;")
+
+    fea_code = "\n".join(lines)
+
+    addOpenTypeFeaturesFromString(font, fea_code)
+    font.save(font_path)
+    font.close()
+
+
 def create_bold_font(svg_dir: str, output_path: str) -> None:
     """Orchestrator: load SVGs, normalise, and build a Bold TTF.
 
@@ -241,7 +423,13 @@ def create_bold_font(svg_dir: str, output_path: str) -> None:
             total_width = adv_w + 2 * bearing
             glyph_contours[name] = (shifted, total_width)
 
+    # Add programmatic mark glyphs (diamond, circle)
+    add_mark_glyphs(glyph_contours)
+
     build_font(glyph_contours, FONT_FAMILY, "Bold", output_path)
+
+    # Add GPOS mark-to-base positioning
+    add_gpos_marks(output_path, glyph_contours)
 
 
 def make_hollow_contours(
@@ -303,5 +491,11 @@ def create_regular_font(svg_dir: str, output_path: str) -> None:
                 shifted.append([(x + bearing, y, on) for x, y, on in contour])
             glyph_contours[name] = (shifted, advance_width + bearing * 2)
 
+    # Add programmatic mark glyphs (diamond, circle)
+    add_mark_glyphs(glyph_contours)
+
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     build_font(glyph_contours, FONT_FAMILY, "Regular", output_path)
+
+    # Add GPOS mark-to-base positioning
+    add_gpos_marks(output_path, glyph_contours)
