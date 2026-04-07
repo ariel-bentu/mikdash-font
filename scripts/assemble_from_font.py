@@ -119,6 +119,50 @@ def _glyph_to_contours(
 
 
 # ---------------------------------------------------------------------------
+# Side-bearing normalisation
+# ---------------------------------------------------------------------------
+
+# Fraction of ink width used as side bearing on each side.
+_BEARING_RATIO = 0.06  # 6% of ink width per side
+
+
+def normalize_side_bearings(
+    glyph_contours: dict[str, tuple[list[list[tuple]], int]],
+    bearing_ratio: float = _BEARING_RATIO,
+) -> dict[str, tuple[list[list[tuple]], int]]:
+    """Recalculate advance widths with consistent proportional side bearings.
+
+    The source font's side bearings are inconsistent (e.g. vav has LSB=41
+    while bet has LSB=27). This strips the original bearings by shifting
+    contours to x=0, then adds ``bearing_ratio * ink_width`` on each side.
+    The result is optically even spacing across narrow and wide letters.
+    """
+    result = {}
+    for name, (contours, _old_adv_w) in glyph_contours.items():
+        all_x = [x for c in contours for x, y, _ in c]
+        if not all_x:
+            result[name] = (contours, _old_adv_w)
+            continue
+
+        x_min = min(all_x)
+        x_max = max(all_x)
+        ink_w = x_max - x_min
+
+        bearing = max(round(ink_w * bearing_ratio), 8)
+
+        # Shift contours so ink starts at x=bearing
+        shift = bearing - x_min
+        new_contours = [
+            [(x + shift, y, on) for x, y, on in c]
+            for c in contours
+        ]
+        new_adv_w = ink_w + 2 * bearing
+        result[name] = (new_contours, new_adv_w)
+
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Mark glyphs (same as assemble.py)
 # ---------------------------------------------------------------------------
 
@@ -404,6 +448,9 @@ def build_from_source(
     print(f"Extracting Hebrew glyphs from {source_font}...")
     glyph_contours = extract_glyph_contours(source_font)
     print(f"  Extracted {len(glyph_contours)} glyphs")
+
+    # Normalise side bearings for consistent inter-letter spacing
+    glyph_contours = normalize_side_bearings(glyph_contours)
 
     # Add marks and pre-composed letter+mark glyphs
     add_mark_glyphs(glyph_contours)

@@ -95,6 +95,10 @@ for name in glyph_names:
 fb.setupHorizontalMetrics(metrics)
 ```
 
+### Side-Bearing Normalization
+
+The source font (FrankRuehlCLM) has inconsistent side bearings — narrow letters like vav had disproportionately large gaps (30% whitespace vs 10% for wide letters). `normalize_side_bearings()` in `assemble_from_font.py` strips the source bearings and applies a consistent **6% of ink width** on each side. This runs after glyph extraction and before mark creation.
+
 ---
 
 ## Unicode Codepoint Map
@@ -285,3 +289,14 @@ When iterating on font builds, browsers aggressively cache fonts. To force reloa
 - Change the `@font-face` `src` URL with a query param: `url('output/Mikdash-Bold.ttf?v=2')`
 - Or change the `font-family` name temporarily
 - Hard-refresh alone is often not enough
+
+## License
+The base font for this project is from the open source [Culmus](https://culmus.sourceforge.io/index.html)
+
+The fonts are distributed under GPL v2.
+The FrankRuehl (FrankRuehlCLM-Medium.otf) is used as the base.
+Frank-Ruehl font family (Hebrew glyphs) is copyright 2002-2011 by Maxim
+Iorsh (iorsh@users.sourceforge.net).  Latin glyphs, digits and punctuation
+contained in the Frank-Ruehl font family are part of Century Schoolbook L
+font family and are copyright 1999 by (URW)++ Design & Development. All 
+rights reserved.
