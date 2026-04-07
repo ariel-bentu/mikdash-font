@@ -8,6 +8,7 @@ into a .ttf via fontTools' FontBuilder.
 import os
 from pathlib import Path
 
+import pyclipper
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.pens.cu2quPen import Cu2QuPen
@@ -17,6 +18,7 @@ from scripts.helpers import (
     DESCENDER,
     FONT_FAMILY,
     HEBREW_LETTERS,
+    HOLLOW_STROKE_RATIO,
     LINE_GAP,
     UNITS_PER_EM,
     normalize_contours,
@@ -240,3 +242,66 @@ def create_bold_font(svg_dir: str, output_path: str) -> None:
             glyph_contours[name] = (shifted, total_width)
 
     build_font(glyph_contours, FONT_FAMILY, "Bold", output_path)
+
+
+def make_hollow_contours(
+    contours: list[list[tuple]], stroke_width: int = 60
+) -> list[list[tuple]]:
+    """Convert filled contours to hollow (outline) contours using polygon offsetting.
+
+    Takes the original (outer) contours, offsets them inward by *stroke_width*
+    to produce inner contours, and returns the combined set. The inner contours
+    are reversed so that their winding order creates a "hole" when rendered.
+    """
+    clipper_paths = []
+    for contour in contours:
+        path = [(int(x), int(y)) for x, y, _ in contour]
+        if len(path) >= 3:
+            clipper_paths.append(path)
+
+    if not clipper_paths:
+        return contours
+
+    pco = pyclipper.PyclipperOffset()
+    for path in clipper_paths:
+        pco.AddPath(path, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
+
+    inner_paths = pco.Execute(-stroke_width)
+
+    if not inner_paths:
+        return contours
+
+    result = []
+    for contour in contours:
+        result.append(contour)
+
+    for path in inner_paths:
+        inner_contour = [(x, y, True) for x, y in reversed(path)]
+        result.append(inner_contour)
+
+    return result
+
+
+def create_regular_font(svg_dir: str, output_path: str) -> None:
+    """Create the Regular (hollow) weight of Mikdash font.
+
+    Works like :func:`create_bold_font` but applies :func:`make_hollow_contours`
+    to each glyph after normalisation so the glyphs appear as outlines rather
+    than filled shapes.
+    """
+    raw_glyphs = load_svg_glyphs(svg_dir)
+    stroke_width = int(UNITS_PER_EM * HOLLOW_STROKE_RATIO)
+
+    glyph_contours: dict[str, tuple[list[list[tuple]], int]] = {}
+    for name, contours in raw_glyphs.items():
+        normalized, advance_width = normalize_contours(contours)
+        if normalized:
+            hollow = make_hollow_contours(normalized, stroke_width=stroke_width)
+            bearing = max(int(advance_width * 0.05), 10)
+            shifted = []
+            for contour in hollow:
+                shifted.append([(x + bearing, y, on) for x, y, on in contour])
+            glyph_contours[name] = (shifted, advance_width + bearing * 2)
+
+    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+    build_font(glyph_contours, FONT_FAMILY, "Regular", output_path)
