@@ -93,7 +93,7 @@ Derived from image measurements:
 
 ## Pipeline
 
-### Step 1: Preprocessing (`scripts/01_preprocess.py`)
+### Step 1: Preprocessing (`scripts/preprocess.py`)
 - Load `font.jpg`
 - Convert to grayscale
 - Apply adaptive thresholding for clean binary image
@@ -101,20 +101,20 @@ Derived from image measurements:
 - Enhance contrast
 - Output: clean binary image
 
-### Step 2: Glyph Segmentation (`scripts/02_segment.py`)
+### Step 2: Glyph Segmentation (`scripts/segment.py`)
 - Define crop regions for each unique Hebrew character in the image
 - Semi-automatic: use contour detection to find character bounding boxes, with manual region specification as fallback
 - Extract each character as an isolated bitmap
 - Multiple samples of same letter averaged/best-picked for quality
 - Output: individual glyph bitmaps in `glyphs/bitmaps/`
 
-### Step 3: Vectorization (`scripts/03_vectorize.py`)
+### Step 3: Vectorization (`scripts/vectorize.py`)
 - For each glyph bitmap, run potrace (or Python binding) to convert to SVG outlines
 - Clean up: simplify paths, remove noise, smooth curves
 - Normalize to consistent em-square sizing
 - Output: SVG files in `glyphs/svg/`
 
-### Step 4: Font Assembly (`scripts/04_assemble.py`)
+### Step 4: Font Assembly (`scripts/assemble.py`)
 - Load SVG glyphs into fontTools TTFont
 - Generate Bold weight from filled contours
 - Generate Regular weight by creating inward offset (hollow) contours
@@ -131,10 +131,10 @@ Derived from image measurements:
 fontMikdash/
 ├── font.jpg                          # Source image
 ├── scripts/
-│   ├── 01_preprocess.py              # Image cleanup
-│   ├── 02_segment.py                 # Glyph extraction
-│   ├── 03_vectorize.py               # Bitmap -> SVG
-│   └── 04_assemble.py                # SVG -> TTF
+│   ├── preprocess.py              # Image cleanup
+│   ├── segment.py                 # Glyph extraction
+│   ├── vectorize.py               # Bitmap -> SVG
+│   └── assemble.py                # SVG -> TTF
 ├── glyphs/
 │   ├── bitmaps/                      # Cropped glyph images
 │   └── svg/                          # Vectorized glyphs (review these)
