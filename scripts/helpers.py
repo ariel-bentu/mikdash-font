@@ -31,10 +31,26 @@ HEBREW_LETTERS = {
     "tav": 0x05EA,
 }
 
-# Special marks — Private Use Area codepoints
-COMBINING_DIAMOND = 0xE001  # combining mark above
-COMBINING_CIRCLE = 0xE002   # combining mark above
+# Special marks — PUA codepoints
+COMBINING_DIAMOND = 0xE001  # standalone diamond mark
+COMBINING_CIRCLE = 0xE002   # standalone circle mark
 STANDALONE_CIRCLE = 0x25CB  # WHITE CIRCLE — standalone glyph
+
+# Pre-composed letter+mark PUA codepoints
+# Each Hebrew letter + diamond/circle gets its own codepoint so the browser
+# renders a single glyph with the mark perfectly centered — no GSUB needed.
+_LETTER_ORDER = [
+    "alef", "bet", "gimel", "dalet", "he", "vav", "zayin", "chet", "tet",
+    "yod", "kaf", "final_kaf", "lamed", "mem", "final_mem", "nun",
+    "final_nun", "samekh", "ayin", "pe", "final_pe", "tsade", "final_tsade",
+    "qof", "resh", "shin", "tav",
+]
+
+COMPOSED_DIAMOND = {}  # letter_name -> PUA codepoint
+COMPOSED_CIRCLE = {}   # letter_name -> PUA codepoint
+for i, name in enumerate(_LETTER_ORDER):
+    COMPOSED_DIAMOND[name] = 0xE100 + i        # U+E100..E11A
+    COMPOSED_CIRCLE[name] = 0xE100 + 27 + i    # U+E11B..E135
 
 # Font metrics (will be calibrated from image measurements)
 UNITS_PER_EM = 1000
@@ -43,7 +59,7 @@ DESCENDER = -200
 LINE_GAP = 0
 
 # Stroke width for hollow (Regular) glyphs, as fraction of UPM
-HOLLOW_STROKE_RATIO = 0.06  # 6% of em — will calibrate from image
+HOLLOW_STROKE_RATIO = 0.035  # 3.5% of em — calibrated from image
 
 FONT_FAMILY = "Mikdash"
 
@@ -64,11 +80,33 @@ def parse_svg_to_contours(svg_content: str) -> list[list[tuple]]:
     Handles M (moveto), L (lineto), C (cubic bezier), Q (quadratic bezier), Z (close).
     Potrace outputs only M, C, L, and Z commands.
 
+    Potrace wraps paths in a ``<g transform="translate(tx,ty) scale(sx,sy)">``.
+    We apply that transform so returned coordinates are in SVG visual space
+    (y-down), which ``normalize_contours`` expects.
+
     Returns list of contours. Coordinates are in SVG space (y-down).
     """
     root = ET.fromstring(svg_content)
     # Handle SVG namespace
     ns = {"svg": "http://www.w3.org/2000/svg"}
+
+    # Look for potrace's <g transform="..."> wrapper
+    tx, ty, sx, sy = 0.0, 0.0, 1.0, 1.0
+    groups = root.findall(".//svg:g", ns)
+    if not groups:
+        groups = root.findall(".//{http://www.w3.org/2000/svg}g")
+    if not groups:
+        groups = root.findall(".//g")
+    for g in groups:
+        transform = g.get("transform", "")
+        # Parse translate(tx,ty) scale(sx,sy)
+        t_match = re.search(r"translate\(\s*([-\d.]+)\s*[,\s]\s*([-\d.]+)\s*\)", transform)
+        s_match = re.search(r"scale\(\s*([-\d.]+)\s*[,\s]\s*([-\d.]+)\s*\)", transform)
+        if t_match:
+            tx, ty = float(t_match.group(1)), float(t_match.group(2))
+        if s_match:
+            sx, sy = float(s_match.group(1)), float(s_match.group(2))
+
     paths = root.findall(".//svg:path", ns)
     if not paths:
         paths = root.findall(".//{http://www.w3.org/2000/svg}path")
@@ -80,6 +118,16 @@ def parse_svg_to_contours(svg_content: str) -> list[list[tuple]]:
         d = path_elem.get("d", "")
         contours = _parse_path_d(d)
         all_contours.extend(contours)
+
+    # Apply potrace transform: point = (x * sx + tx, y * sy + ty)
+    if sx != 1.0 or sy != 1.0 or tx != 0.0 or ty != 0.0:
+        transformed = []
+        for contour in all_contours:
+            new_contour = []
+            for x, y, on_curve in contour:
+                new_contour.append((x * sx + tx, y * sy + ty, on_curve))
+            transformed.append(new_contour)
+        all_contours = transformed
 
     return all_contours
 
@@ -170,15 +218,23 @@ def _parse_path_d(d: str) -> list[list[tuple]]:
 
 
 def normalize_contours(
-    contours: list[list[tuple]], target_height: int = 800, units_per_em: int = 1000
-) -> list[list[tuple]]:
+    contours: list[list[tuple]],
+    target_height: int = 800,
+    units_per_em: int = 1000,
+    global_scale: float = None,
+    global_top: float = None,
+    baseline_y: float = None,
+) -> tuple[list[list[tuple]], int]:
     """Normalize contours to fit within font em-square.
 
-    - Scales to target_height (ascender height)
-    - Flips Y axis (SVG is y-down, font is y-up)
-    - Centers horizontally
+    When *global_scale*, *global_top*, and *baseline_y* are provided, all
+    glyphs are scaled uniformly and aligned to a common top-line / baseline.
+    This preserves the relative sizes of letters (e.g. yod stays small).
 
-    Returns normalized contours and the glyph advance width.
+    Without those parameters, each glyph is scaled independently to fill
+    *target_height* (legacy behaviour).
+
+    Returns (normalized_contours, advance_width).
     """
     if not contours:
         return [], 0
@@ -196,18 +252,86 @@ def normalize_contours(
     if svg_height == 0 or svg_width == 0:
         return contours, 0
 
-    # Scale to fit target height
-    scale = target_height / svg_height
+    if global_scale is not None and global_top is not None and baseline_y is not None:
+        scale = global_scale
+        # In SVG y-down space:
+        #   global_top = top of tallest normal letters
+        #   baseline_y = bottom of normal letters (the baseline)
+        # In font space (y-up):
+        #   baseline = 0, ascender = target_height
+        # A point at SVG y maps to font y:
+        #   font_y = target_height - (y - global_top) * scale
+        # This puts global_top -> target_height (ascender) and
+        # baseline_y -> target_height - (baseline_y - global_top)*scale = 0
+        ref_top = global_top
+    else:
+        scale = target_height / svg_height
+        ref_top = min_y
 
     normalized = []
     for contour in contours:
         new_contour = []
         for x, y, on_curve in contour:
-            # Translate to origin, scale, flip Y
             nx = (x - min_x) * scale
-            ny = target_height - (y - min_y) * scale  # flip Y
+            ny = target_height - (y - ref_top) * scale  # flip Y, align to top
             new_contour.append((round(nx), round(ny), on_curve))
         normalized.append(new_contour)
 
     advance_width = round(svg_width * scale)
     return normalized, advance_width
+
+
+def compute_global_scale(
+    all_glyphs: dict[str, list[list[tuple]]],
+    target_height: int = 800,
+) -> tuple[float, float, float]:
+    """Compute a uniform scale factor from all glyph contours.
+
+    Uses only "normal" height glyphs (not ascenders/descenders) to derive
+    the scale, so that letters like lamed naturally extend above the
+    ascender line and qof/final forms extend below the baseline.
+
+    Returns (scale, global_top, baseline_y).
+    """
+    glyph_info = {}
+    for name, contours in all_glyphs.items():
+        all_points = [p for c in contours for p in c]
+        if not all_points:
+            continue
+        ys = [p[1] for p in all_points]
+        glyph_info[name] = (min(ys), max(ys), max(ys) - min(ys))
+
+    if not glyph_info:
+        return 1.0, 0.0, 0.0
+
+    # Find median height to identify "normal" glyphs
+    all_heights = sorted(info[2] for info in glyph_info.values())
+    median_h = all_heights[len(all_heights) // 2]
+
+    # "Normal" glyphs: height within 20% of median (excludes ascenders,
+    # descenders, and tiny glyphs like yod)
+    normal_glyphs = {
+        name: info for name, info in glyph_info.items()
+        if abs(info[2] - median_h) / median_h < 0.20
+    }
+
+    if not normal_glyphs:
+        normal_glyphs = glyph_info  # fallback
+
+    # Body top and bottom from normal glyphs only
+    normal_tops = [info[0] for info in normal_glyphs.values()]
+    normal_bots = [info[1] for info in normal_glyphs.values()]
+
+    sorted_tops = sorted(normal_tops)
+    sorted_bots = sorted(normal_bots)
+    global_top = sorted_tops[len(sorted_tops) // 2]
+    global_bot = sorted_bots[len(sorted_bots) // 2]
+
+    body_height = global_bot - global_top
+    if body_height <= 0:
+        body_height = median_h
+
+    scale = target_height / body_height
+    baseline_y = global_bot
+
+    return scale, global_top, baseline_y

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>Mikdash Font Test</title>
+<style>
+@font-face {
+    font-family: 'Mikdash';
+    src: url('output/Mikdash-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'Mikdash';
+    src: url('output/Mikdash-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    font-family: 'Mikdash', serif;
+    margin: 40px;
+    background: #f9f7f2;
+    color: #1a1a1a;
+}
+
+h1 { font-family: sans-serif; direction: ltr; font-size: 18px; color: #666; }
+h2 { font-family: sans-serif; direction: ltr; font-size: 14px; color: #999; margin-top: 30px; }
+
+.sample {
+    font-size: 48px;
+    line-height: 1.6;
+    margin: 10px 0 30px 0;
+    padding: 20px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.bold { font-weight: bold; }
+.regular { font-weight: normal; }
+
+.alphabet {
+    font-size: 36px;
+    letter-spacing: 8px;
+}
+
+.size-test span {
+    display: inline-block;
+    margin: 0 10px;
+}
+.size-test .s24 { font-size: 24px; }
+.size-test .s36 { font-size: 36px; }
+.size-test .s48 { font-size: 48px; }
+.size-test .s72 { font-size: 72px; }
+.size-test .s96 { font-size: 96px; }
+
+.latin { direction: ltr; text-align: left; }
+
+textarea {
+    font-family: 'Mikdash', serif;
+    font-size: 48px;
+    width: 100%;
+    height: 120px;
+    padding: 15px;
+    direction: rtl;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+}
+
+.diacritics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 4px;
+    direction: rtl;
+    margin: 10px 0 30px 0;
+}
+.diacritics-grid .cell {
+    font-family: 'Mikdash', serif;
+    font-size: 48px;
+    line-height: 2.2;
+    text-align: center;
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 4px 0;
+}
+</style>
+</head>
+<body>
+
+<h1>Mikdash Font Test Page</h1>
+
+<h2>Bold — Full Alphabet</h2>
+<div class="sample bold alphabet">
+אבגדהוזחטיכךלמםנןסעפףצץקרשת
+</div>
+
+<h2>Regular (Hollow) — Full Alphabet</h2>
+<div class="sample regular alphabet">
+אבגדהוזחטיכךלמםנןסעפףצץקרשת
+</div>
+
+<h2>Bold — Sample Text</h2>
+<div class="sample bold">
+בראשית ברא אלהים את השמים ואת הארץ
+</div>
+
+<h2>Regular — Sample Text</h2>
+<div class="sample regular">
+בראשית ברא אלהים את השמים ואת הארץ
+</div>
+
+<h2>Bold — Diamond Above (all letters)</h2>
+<div class="diacritics-grid bold">
+<div class="cell">&#xE100;</div>
+<div class="cell">&#xE101;</div>
+<div class="cell">&#xE102;</div>
+<div class="cell">&#xE103;</div>
+<div class="cell">&#xE104;</div>
+<div class="cell">&#xE105;</div>
+<div class="cell">&#xE106;</div>
+<div class="cell">&#xE107;</div>
+<div class="cell">&#xE108;</div>
+<div class="cell">&#xE109;</div>
+<div class="cell">&#xE10A;</div>
+<div class="cell">&#xE10B;</div>
+<div class="cell">&#xE10C;</div>
+<div class="cell">&#xE10D;</div>
+<div class="cell">&#xE10E;</div>
+<div class="cell">&#xE10F;</div>
+<div class="cell">&#xE110;</div>
+<div class="cell">&#xE111;</div>
+<div class="cell">&#xE112;</div>
+<div class="cell">&#xE113;</div>
+<div class="cell">&#xE114;</div>
+<div class="cell">&#xE115;</div>
+<div class="cell">&#xE116;</div>
+<div class="cell">&#xE117;</div>
+<div class="cell">&#xE118;</div>
+<div class="cell">&#xE119;</div>
+<div class="cell">&#xE11A;</div>
+</div>
+
+<h2>Bold — Circle Above (all letters)</h2>
+<div class="diacritics-grid bold">
+<div class="cell">&#xE11B;</div>
+<div class="cell">&#xE11C;</div>
+<div class="cell">&#xE11D;</div>
+<div class="cell">&#xE11E;</div>
+<div class="cell">&#xE11F;</div>
+<div class="cell">&#xE120;</div>
+<div class="cell">&#xE121;</div>
+<div class="cell">&#xE122;</div>
+<div class="cell">&#xE123;</div>
+<div class="cell">&#xE124;</div>
+<div class="cell">&#xE125;</div>
+<div class="cell">&#xE126;</div>
+<div class="cell">&#xE127;</div>
+<div class="cell">&#xE128;</div>
+<div class="cell">&#xE129;</div>
+<div class="cell">&#xE12A;</div>
+<div class="cell">&#xE12B;</div>
+<div class="cell">&#xE12C;</div>
+<div class="cell">&#xE12D;</div>
+<div class="cell">&#xE12E;</div>
+<div class="cell">&#xE12F;</div>
+<div class="cell">&#xE130;</div>
+<div class="cell">&#xE131;</div>
+<div class="cell">&#xE132;</div>
+<div class="cell">&#xE133;</div>
+<div class="cell">&#xE134;</div>
+<div class="cell">&#xE135;</div>
+</div>
+
+<h2>Regular — Diamond Above (all letters)</h2>
+<div class="diacritics-grid regular">
+<div class="cell">&#xE100;</div>
+<div class="cell">&#xE101;</div>
+<div class="cell">&#xE102;</div>
+<div class="cell">&#xE103;</div>
+<div class="cell">&#xE104;</div>
+<div class="cell">&#xE105;</div>
+<div class="cell">&#xE106;</div>
+<div class="cell">&#xE107;</div>
+<div class="cell">&#xE108;</div>
+<div class="cell">&#xE109;</div>
+<div class="cell">&#xE10A;</div>
+<div class="cell">&#xE10B;</div>
+<div class="cell">&#xE10C;</div>
+<div class="cell">&#xE10D;</div>
+<div class="cell">&#xE10E;</div>
+<div class="cell">&#xE10F;</div>
+<div class="cell">&#xE110;</div>
+<div class="cell">&#xE111;</div>
+<div class="cell">&#xE112;</div>
+<div class="cell">&#xE113;</div>
+<div class="cell">&#xE114;</div>
+<div class="cell">&#xE115;</div>
+<div class="cell">&#xE116;</div>
+<div class="cell">&#xE117;</div>
+<div class="cell">&#xE118;</div>
+<div class="cell">&#xE119;</div>
+<div class="cell">&#xE11A;</div>
+</div>
+
+<h2>Regular — Circle Above (all letters)</h2>
+<div class="diacritics-grid regular">
+<div class="cell">&#xE11B;</div>
+<div class="cell">&#xE11C;</div>
+<div class="cell">&#xE11D;</div>
+<div class="cell">&#xE11E;</div>
+<div class="cell">&#xE11F;</div>
+<div class="cell">&#xE120;</div>
+<div class="cell">&#xE121;</div>
+<div class="cell">&#xE122;</div>
+<div class="cell">&#xE123;</div>
+<div class="cell">&#xE124;</div>
+<div class="cell">&#xE125;</div>
+<div class="cell">&#xE126;</div>
+<div class="cell">&#xE127;</div>
+<div class="cell">&#xE128;</div>
+<div class="cell">&#xE129;</div>
+<div class="cell">&#xE12A;</div>
+<div class="cell">&#xE12B;</div>
+<div class="cell">&#xE12C;</div>
+<div class="cell">&#xE12D;</div>
+<div class="cell">&#xE12E;</div>
+<div class="cell">&#xE12F;</div>
+<div class="cell">&#xE130;</div>
+<div class="cell">&#xE131;</div>
+<div class="cell">&#xE132;</div>
+<div class="cell">&#xE133;</div>
+<div class="cell">&#xE134;</div>
+<div class="cell">&#xE135;</div>
+</div>
+
+<h2>Marks — Standalone</h2>
+<div class="sample bold">
+Diamond: &#xE001; &nbsp; Circle: ○
+</div>
+
+<h2>Marks — In Context</h2>
+<div class="sample bold" style="line-height:2.2">
+&#xE101;ראשית ברא &#xE11B;ל&#xE11F;ים את &#xE104;שמים ○ ואת הארץ
+</div>
+
+<h2>Size Comparison (Bold)</h2>
+<div class="sample bold size-test">
+<span class="s24">שלום 24px</span>
+<span class="s36">שלום 36px</span>
+<span class="s48">שלום 48px</span>
+<span class="s72">שלום 72px</span>
+<span class="s96">שלום 96px</span>
+</div>
+
+<h2>Latin / Numbers (from EB Garamond donor)</h2>
+<div class="sample bold latin">
+ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>
+abcdefghijklmnopqrstuvwxyz<br>
+0123456789 .,:;!?-—'"()[]
+</div>
+
+<h2>Mixed Hebrew + Latin</h2>
+<div class="sample bold">
+מגילה VII קטע 3 — שורה 12
+</div>
+
+<h2>Try it yourself</h2>
+<div style="font-family: sans-serif; direction: ltr; font-size: 13px; margin-bottom: 6px;">
+    Pick a letter then a mark:
+    <select id="letterSelect" style="font-size:14px; padding:2px;">
+        <option value="E100" data-circle="E11B">א alef</option>
+        <option value="E101" data-circle="E11C">ב bet</option>
+        <option value="E102" data-circle="E11D">ג gimel</option>
+        <option value="E103" data-circle="E11E">ד dalet</option>
+        <option value="E104" data-circle="E11F">ה he</option>
+        <option value="E105" data-circle="E120">ו vav</option>
+        <option value="E106" data-circle="E121">ז zayin</option>
+        <option value="E107" data-circle="E122">ח chet</option>
+        <option value="E108" data-circle="E123">ט tet</option>
+        <option value="E109" data-circle="E124">י yod</option>
+        <option value="E10A" data-circle="E125">כ kaf</option>
+        <option value="E10B" data-circle="E126">ך final kaf</option>
+        <option value="E10C" data-circle="E127">ל lamed</option>
+        <option value="E10D" data-circle="E128">מ mem</option>
+        <option value="E10E" data-circle="E129">ם final mem</option>
+        <option value="E10F" data-circle="E12A">נ nun</option>
+        <option value="E110" data-circle="E12B">ן final nun</option>
+        <option value="E111" data-circle="E12C">ס samekh</option>
+        <option value="E112" data-circle="E12D">ע ayin</option>
+        <option value="E113" data-circle="E12E">פ pe</option>
+        <option value="E114" data-circle="E12F">ף final pe</option>
+        <option value="E115" data-circle="E130">צ tsade</option>
+        <option value="E116" data-circle="E131">ץ final tsade</option>
+        <option value="E117" data-circle="E132">ק qof</option>
+        <option value="E118" data-circle="E133">ר resh</option>
+        <option value="E119" data-circle="E134">ש shin</option>
+        <option value="E11A" data-circle="E135">ת tav</option>
+    </select>
+    <button onclick="insertMark('diamond')" style="font-size:14px; padding:4px 12px; cursor:pointer;">&#x25C6; Diamond</button>
+    <button onclick="insertMark('circle')" style="font-size:14px; padding:4px 12px; cursor:pointer;">&#x25CB; Circle</button>
+    <button onclick="insertChar('○')" style="font-size:14px; padding:4px 12px; cursor:pointer;">○ Standalone Circle</button>
+</div>
+<textarea id="tryarea" class="bold" placeholder="הקלד כאן...">בראשית ברא אלהים</textarea>
+<script>
+function insertMark(type) {
+    var sel = document.getElementById('letterSelect');
+    var opt = sel.options[sel.selectedIndex];
+    var code = type === 'diamond' ? opt.value : opt.dataset.circle;
+    var ch = String.fromCodePoint(parseInt(code, 16));
+    insertChar(ch);
+}
+function insertChar(ch) {
+    var ta = document.getElementById('tryarea');
+    var start = ta.selectionStart;
+    var end = ta.selectionEnd;
+    ta.value = ta.value.slice(0, start) + ch + ta.value.slice(end);
+    ta.selectionStart = ta.selectionEnd = start + ch.length;
+    ta.focus();
+}
+</script>
+
+<h2 style="margin-top:40px">How to type special characters</h2>
+<div style="font-family: sans-serif; direction: ltr; text-align: left; font-size: 14px; line-height: 2; background: white; padding: 20px; border: 1px solid #ddd; border-radius: 4px;">
+<b>How it works:</b> Each letter+mark combination is a single pre-composed glyph with its own PUA codepoint. Use the dropdown + buttons above to insert them, or use the HTML entities below.<br>
+<br>
+<b>Standalone Diamond:</b> U+E001 — <code>&amp;#xE001;</code> → <span style="font-family:'Mikdash'; font-size:32px; font-weight:bold;">&#xE001;</span><br>
+<b>Standalone Circle:</b> U+25CB — <code>○</code> → <span style="font-family:'Mikdash'; font-size:32px; font-weight:bold;">○</span><br>
+<br>
+<b>Letter + Diamond above:</b> U+E100–E11A — e.g. <code>&amp;#xE100;</code> = <span style="font-family:'Mikdash'; font-size:32px; font-weight:bold;">&#xE100;</span> (alef+diamond), <code>&amp;#xE119;</code> = <span style="font-family:'Mikdash'; font-size:32px; font-weight:bold;">&#xE119;</span> (shin+diamond)<br>
+<b>Letter + Circle above:</b> U+E11B–E135 — e.g. <code>&amp;#xE11B;</code> = <span style="font-family:'Mikdash'; font-size:32px; font-weight:bold;">&#xE11B;</span> (alef+circle), <code>&amp;#xE134;</code> = <span style="font-family:'Mikdash'; font-size:32px; font-weight:bold;">&#xE134;</span> (shin+circle)<br>
+<br>
+<details>
+<summary><b>Full codepoint reference</b></summary>
+<table style="border-collapse:collapse; margin:10px 0; font-size:13px;">
+<tr><th style="padding:4px 8px; border:1px solid #ddd;">Letter</th><th style="padding:4px 8px; border:1px solid #ddd;">+ Diamond</th><th style="padding:4px 8px; border:1px solid #ddd;">+ Circle</th></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">א alef</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E100</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E11B</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ב bet</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E101</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E11C</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ג gimel</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E102</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E11D</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ד dalet</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E103</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E11E</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ה he</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E104</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E11F</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ו vav</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E105</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E120</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ז zayin</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E106</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E121</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ח chet</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E107</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E122</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ט tet</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E108</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E123</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">י yod</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E109</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E124</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">כ kaf</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E10A</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E125</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ך final kaf</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E10B</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E126</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ל lamed</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E10C</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E127</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">מ mem</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E10D</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E128</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ם final mem</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E10E</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E129</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">נ nun</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E10F</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E12A</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ן final nun</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E110</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E12B</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ס samekh</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E111</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E12C</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ע ayin</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E112</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E12D</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">פ pe</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E113</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E12E</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ף final pe</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E114</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E12F</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">צ tsade</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E115</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E130</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ץ final tsade</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E116</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E131</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ק qof</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E117</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E132</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ר resh</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E118</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E133</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ש shin</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E119</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E134</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">ת tav</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E11A</td><td style="padding:4px 8px; border:1px solid #ddd;">U+E135</td></tr>
+</table>
+</details>
+</div>
+
+</body>
+</html>

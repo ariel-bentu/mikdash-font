@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mikdash Bitmap Editor</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #eee; display: flex; height: 100vh; }
+
+#sidebar {
+    width: 260px; padding: 20px; background: #222; display: flex; flex-direction: column; gap: 14px;
+    border-right: 1px solid #444;
+}
+#sidebar h2 { font-size: 16px; color: #aaa; }
+#sidebar label { font-size: 13px; color: #999; }
+
+.btn {
+    padding: 8px 14px; border: 1px solid #555; border-radius: 4px; background: #333;
+    color: #eee; cursor: pointer; font-size: 13px; text-align: center;
+}
+.btn:hover { background: #444; }
+.btn.active { background: #0066cc; border-color: #0088ff; }
+
+.tool-row { display: flex; gap: 8px; }
+.tool-row .btn { flex: 1; }
+
+#brush-size-display { font-size: 13px; color: #ccc; }
+
+#drop-zone {
+    border: 2px dashed #555; border-radius: 8px; padding: 30px 15px; text-align: center;
+    color: #777; font-size: 13px; transition: border-color 0.2s;
+}
+#drop-zone.over { border-color: #0088ff; color: #aaa; }
+#drop-zone.loaded { border-color: #2a2; color: #6c6; }
+
+#info { font-size: 12px; color: #777; line-height: 1.5; }
+#filename { font-size: 13px; color: #aaa; word-break: break-all; }
+
+#main { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; position: relative; }
+
+#canvas-wrap {
+    position: relative; image-rendering: pixelated;
+    border: 1px solid #444; background: repeating-conic-gradient(#333 0% 25%, #2a2a2a 0% 50%) 50% / 20px 20px;
+}
+#canvas { image-rendering: pixelated; cursor: crosshair; display: block; }
+
+#guides { position: absolute; top: 0; left: 0; pointer-events: none; }
+
+#zoom-info {
+    position: absolute; bottom: 15px; right: 15px; background: rgba(0,0,0,0.7);
+    padding: 5px 10px; border-radius: 4px; font-size: 12px; color: #aaa;
+}
+
+.section { border-top: 1px solid #333; padding-top: 12px; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h2>Mikdash Bitmap Editor</h2>
+
+    <div id="drop-zone">Drop a PNG here<br>or click to open</div>
+    <input type="file" id="file-input" accept=".png" style="display:none">
+    <div id="filename"></div>
+
+    <div class="section">
+        <label>Tool</label>
+        <div class="tool-row">
+            <div class="btn active" id="btn-black" onclick="setTool('black')">● Black</div>
+            <div class="btn" id="btn-eraser" onclick="setTool('eraser')">◻ Eraser</div>
+            <div class="btn" id="btn-bucket" onclick="setTool('bucket')">◧ Fill</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <label>Brush Size: <span id="brush-size-display">1px</span></label>
+        <input type="range" id="brush-size" min="1" max="8" value="1" style="width:100%">
+    </div>
+
+    <div class="section">
+        <label>Guides</label>
+        <div class="tool-row">
+            <div class="btn active" id="btn-guides" onclick="toggleGuides()">Show Guides</div>
+        </div>
+        <div style="margin-top:6px; font-size:11px; color:#666;">
+            Green = body top/bottom<br>
+            Red = ascender top (lamed)<br>
+            Blue = descender line
+        </div>
+    </div>
+
+    <div class="section">
+        <label>Glyph Type</label>
+        <div class="tool-row">
+            <div class="btn active" id="btn-type-normal" onclick="setGlyphType('normal')">Normal</div>
+            <div class="btn" id="btn-type-descender" onclick="setGlyphType('descender')">Descender</div>
+        </div>
+        <div class="tool-row" style="margin-top:6px;">
+            <div class="btn" id="btn-type-ascender" onclick="setGlyphType('ascender')">Ascender/ל</div>
+            <div class="btn" id="btn-type-small" onclick="setGlyphType('small')">Small/Yod</div>
+        </div>
+        <div style="margin-top:8px; font-size:11px; color:#666;" id="type-desc">
+            Body: y 2–90, canvas 75×93
+        </div>
+    </div>
+
+    <div class="section">
+        <label>Canvas Actions</label>
+        <div class="tool-row">
+            <div class="btn" onclick="newGlyph()">New Blank</div>
+            <div class="btn" onclick="refitGlyph()">Refit Loaded</div>
+        </div>
+        <div style="margin-top:6px; font-size:11px; color:#666;">
+            Refit = resize canvas &amp; scale ink to fit guides
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="btn" id="btn-save" onclick="saveFile()" style="background:#1a6b1a; border-color:#2a2;">💾 Save (overwrite original)</div>
+        <div style="margin-top:6px;">
+            <div class="btn" onclick="downloadFile()">⬇ Download as new file</div>
+        </div>
+    </div>
+
+    <div id="info" class="section">
+        <b>Target sizes:</b><br>
+        Normal letter: ~70-90w × 90-95h<br>
+        With descender: ~70w × 110h<br>
+        Ascender (lamed): ~65w × 115h<br>
+        Small (yod): ~25w × 30h<br>
+        <br>
+        <b>Shortcuts:</b><br>
+        B = black, E = eraser, G = fill<br>
+        [ / ] = brush size<br>
+        Ctrl+Z = undo, Ctrl+S = save<br>
+        +/- = zoom
+    </div>
+</div>
+
+<div id="main">
+    <div id="canvas-wrap" style="display:none">
+        <canvas id="canvas"></canvas>
+        <canvas id="guides"></canvas>
+    </div>
+    <div id="zoom-info"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const guidesCanvas = document.getElementById('guides');
+const guidesCtx = guidesCanvas.getContext('2d');
+const wrap = document.getElementById('canvas-wrap');
+
+let tool = 'black';
+let brushSize = 1;
+let zoom = 8;
+let drawing = false;
+let showGuides = true;
+let fileHandle = null;
+let originalFile = null;
+let undoStack = [];
+const MAX_UNDO = 30;
+
+// Glyph type definitions: { canvasW, canvasH, bodyTop, bodyBot, label }
+const GLYPH_TYPES = {
+    normal:    { w: 75,  h: 93,  bodyTop: 2, bodyBot: 90,  desc: 'Body: y 2\u201390, canvas 75\u00d793' },
+    descender: { w: 75,  h: 115, bodyTop: 2, bodyBot: 90,  desc: 'Body: y 2\u201390, descender to 110, canvas 75\u00d7115' },
+    ascender:  { w: 75,  h: 115, bodyTop: 22, bodyBot: 112, desc: 'Ascender: y 2, body: y 22\u2013112, canvas 75\u00d7115' },
+    small:     { w: 25,  h: 30,  bodyTop: 2, bodyBot: 28,  desc: 'Body: y 2\u201328, canvas 25\u00d730' },
+};
+let glyphType = 'normal';
+
+function setGlyphType(t) {
+    glyphType = t;
+    document.getElementById('btn-type-normal').classList.toggle('active', t === 'normal');
+    document.getElementById('btn-type-descender').classList.toggle('active', t === 'descender');
+    document.getElementById('btn-type-ascender').classList.toggle('active', t === 'ascender');
+    document.getElementById('btn-type-small').classList.toggle('active', t === 'small');
+    document.getElementById('type-desc').textContent = GLYPH_TYPES[t].desc;
+    drawGuides();
+}
+
+// Tool
+function setTool(t) {
+    tool = t;
+    document.getElementById('btn-black').classList.toggle('active', t === 'black');
+    document.getElementById('btn-eraser').classList.toggle('active', t === 'eraser');
+    document.getElementById('btn-bucket').classList.toggle('active', t === 'bucket');
+}
+
+// Brush size
+const brushSlider = document.getElementById('brush-size');
+brushSlider.addEventListener('input', () => {
+    brushSize = parseInt(brushSlider.value);
+    document.getElementById('brush-size-display').textContent = brushSize + 'px';
+});
+
+// Zoom
+function setZoom(z) {
+    zoom = Math.max(1, Math.min(32, z));
+    if (canvas.width) {
+        wrap.style.width = (canvas.width * zoom) + 'px';
+        wrap.style.height = (canvas.height * zoom) + 'px';
+        canvas.style.width = (canvas.width * zoom) + 'px';
+        canvas.style.height = (canvas.height * zoom) + 'px';
+        guidesCanvas.style.width = (canvas.width * zoom) + 'px';
+        guidesCanvas.style.height = (canvas.height * zoom) + 'px';
+        guidesCanvas.width = canvas.width * zoom;
+        guidesCanvas.height = canvas.height * zoom;
+        drawGuides();
+    }
+    document.getElementById('zoom-info').textContent = zoom + 'x zoom | ' + (canvas.width || 0) + '×' + (canvas.height || 0) + 'px';
+}
+
+// Guides
+function toggleGuides() {
+    showGuides = !showGuides;
+    document.getElementById('btn-guides').classList.toggle('active', showGuides);
+    drawGuides();
+}
+
+function drawGuides() {
+    guidesCtx.clearRect(0, 0, guidesCanvas.width, guidesCanvas.height);
+    if (!showGuides || !canvas.height) return;
+
+    const h = canvas.height;
+    const w = canvas.width;
+    const gt = GLYPH_TYPES[glyphType];
+
+    guidesCtx.lineWidth = 1;
+
+    // Body top — green
+    guidesCtx.strokeStyle = 'rgba(0,200,0,0.5)';
+    guidesCtx.beginPath();
+    guidesCtx.moveTo(0, gt.bodyTop * zoom + 0.5);
+    guidesCtx.lineTo(w * zoom, gt.bodyTop * zoom + 0.5);
+    guidesCtx.stroke();
+
+    // Body bottom / baseline — green
+    guidesCtx.beginPath();
+    guidesCtx.moveTo(0, gt.bodyBot * zoom + 0.5);
+    guidesCtx.lineTo(w * zoom, gt.bodyBot * zoom + 0.5);
+    guidesCtx.stroke();
+
+    // Ascender: red line at y=2 (ascender peak, body top is lower)
+    if (glyphType === 'ascender') {
+        guidesCtx.strokeStyle = 'rgba(255,80,80,0.5)';
+        guidesCtx.beginPath();
+        guidesCtx.moveTo(0, 2 * zoom + 0.5);
+        guidesCtx.lineTo(w * zoom, 2 * zoom + 0.5);
+        guidesCtx.stroke();
+    }
+
+    // Descender: blue line at y=110
+    if (glyphType === 'descender') {
+        guidesCtx.strokeStyle = 'rgba(80,140,255,0.5)';
+        guidesCtx.beginPath();
+        guidesCtx.moveTo(0, 110 * zoom + 0.5);
+        guidesCtx.lineTo(w * zoom, 110 * zoom + 0.5);
+        guidesCtx.stroke();
+    }
+}
+
+// Undo
+function pushUndo() {
+    undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+}
+
+function undo() {
+    if (undoStack.length === 0) return;
+    ctx.putImageData(undoStack.pop(), 0, 0);
+}
+
+// Drawing
+function getPixelPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / zoom);
+    const y = Math.floor((e.clientY - rect.top) / zoom);
+    return [x, y];
+}
+
+function paint(x, y) {
+    ctx.fillStyle = tool === 'black' ? '#000000' : '#ffffff';
+    const half = Math.floor(brushSize / 2);
+    ctx.fillRect(x - half, y - half, brushSize, brushSize);
+}
+
+function floodFill(startX, startY) {
+    const w = canvas.width, h = canvas.height;
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+
+    const idx = (startY * w + startX) * 4;
+    const targetR = data[idx], targetG = data[idx+1], targetB = data[idx+2];
+
+    // Don't fill if already black
+    if (targetR === 0 && targetG === 0 && targetB === 0) return;
+
+    const tolerance = 30;
+    function matches(i) {
+        return Math.abs(data[i] - targetR) <= tolerance &&
+               Math.abs(data[i+1] - targetG) <= tolerance &&
+               Math.abs(data[i+2] - targetB) <= tolerance;
+    }
+
+    const stack = [[startX, startY]];
+    const visited = new Uint8Array(w * h);
+
+    while (stack.length > 0) {
+        const [x, y] = stack.pop();
+        if (x < 0 || x >= w || y < 0 || y >= h) continue;
+        const pos = y * w + x;
+        if (visited[pos]) continue;
+        const i = pos * 4;
+        if (!matches(i)) continue;
+
+        visited[pos] = 1;
+        data[i] = 0; data[i+1] = 0; data[i+2] = 0; data[i+3] = 255;
+
+        stack.push([x+1, y], [x-1, y], [x, y+1], [x, y-1]);
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+}
+
+canvas.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    pushUndo();
+    const [x, y] = getPixelPos(e);
+    if (tool === 'bucket') {
+        floodFill(x, y);
+    } else {
+        drawing = true;
+        paint(x, y);
+    }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (!drawing) return;
+    const [x, y] = getPixelPos(e);
+    paint(x, y);
+});
+
+window.addEventListener('mouseup', () => { drawing = false; });
+
+// Load image
+function loadImage(file) {
+    originalFile = file;
+    document.getElementById('filename').textContent = file.name;
+    document.getElementById('drop-zone').textContent = file.name;
+    document.getElementById('drop-zone').classList.add('loaded');
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(img, 0, 0);
+            wrap.style.display = 'block';
+            setZoom(zoom);
+            undoStack = [];
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+// New blank glyph using current glyph type
+function newGlyph() {
+    const gt = GLYPH_TYPES[glyphType];
+    canvas.width = gt.w;
+    canvas.height = gt.h;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, gt.w, gt.h);
+    wrap.style.display = 'block';
+    originalFile = null;
+    document.getElementById('filename').textContent = 'new_glyph.png (unsaved)';
+    document.getElementById('drop-zone').textContent = 'New ' + glyphType + ' glyph';
+    document.getElementById('drop-zone').classList.remove('loaded');
+    setZoom(zoom);
+    undoStack = [];
+}
+
+// Refit: resize canvas to current glyph type and scale/position ink to fit guides
+function refitGlyph() {
+    if (!canvas.width) return;
+    pushUndo();
+
+    const gt = GLYPH_TYPES[glyphType];
+    const srcW = canvas.width, srcH = canvas.height;
+
+    // Find ink bounding box
+    const imageData = ctx.getImageData(0, 0, srcW, srcH);
+    const data = imageData.data;
+    let inkTop = srcH, inkBot = 0, inkLeft = srcW, inkRight = 0;
+    for (let y = 0; y < srcH; y++) {
+        for (let x = 0; x < srcW; x++) {
+            const i = (y * srcW + x) * 4;
+            // Pixel is ink if it's dark (R+G+B < 384, i.e. average < 128)
+            if (data[i] + data[i+1] + data[i+2] < 384) {
+                if (y < inkTop) inkTop = y;
+                if (y > inkBot) inkBot = y;
+                if (x < inkLeft) inkLeft = x;
+                if (x > inkRight) inkRight = x;
+            }
+        }
+    }
+
+    if (inkTop > inkBot) return; // no ink found
+
+    const inkW = inkRight - inkLeft + 1;
+    const inkH = inkBot - inkTop + 1;
+
+    // Target zone: ink should fit between bodyTop+1 and bodyBot-1 with 1px margin on sides
+    const targetTop = gt.bodyTop + 1;
+    const targetBot = gt.bodyBot - 1;
+    // For descender type, allow ink to extend to near bottom of canvas
+    const targetBotFull = (glyphType === 'descender') ? gt.h - 3 : targetBot;
+    // For ascender type, allow ink to extend to near top of canvas
+    const targetTopFull = (glyphType === 'ascender') ? 3 : targetTop;
+
+    const availH = targetBotFull - targetTopFull;
+    const availW = gt.w - 4; // 2px margin each side
+
+    const scale = Math.min(availW / inkW, availH / inkH);
+
+    const scaledW = Math.round(inkW * scale);
+    const scaledH = Math.round(inkH * scale);
+
+    // Position: center horizontally, align top to target top
+    const destX = Math.round((gt.w - scaledW) / 2);
+    // For normal/descender: align ink top to bodyTop
+    // For ascender: align ink bottom to bodyBot (ink hangs from body, ascender goes up)
+    let destY;
+    if (glyphType === 'ascender') {
+        destY = targetBotFull - scaledH;
+    } else {
+        destY = targetTopFull;
+    }
+
+    // Create temp canvas with the original ink
+    const tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = srcW;
+    tmpCanvas.height = srcH;
+    const tmpCtx = tmpCanvas.getContext('2d');
+    tmpCtx.putImageData(imageData, 0, 0);
+
+    // Resize main canvas and draw scaled ink
+    canvas.width = gt.w;
+    canvas.height = gt.h;
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, gt.w, gt.h);
+    ctx.drawImage(
+        tmpCanvas,
+        inkLeft, inkTop, inkW, inkH,   // source rect (ink only)
+        destX, destY, scaledW, scaledH // dest rect (scaled to fit)
+    );
+
+    // Threshold to pure black/white (remove anti-aliasing from scaling)
+    const newData = ctx.getImageData(0, 0, gt.w, gt.h);
+    const nd = newData.data;
+    for (let i = 0; i < nd.length; i += 4) {
+        const avg = (nd[i] + nd[i+1] + nd[i+2]) / 3;
+        const v = avg < 128 ? 0 : 255;
+        nd[i] = v; nd[i+1] = v; nd[i+2] = v; nd[i+3] = 255;
+    }
+    ctx.putImageData(newData, 0, 0);
+
+    wrap.style.display = 'block';
+    setZoom(zoom);
+}
+
+// Save — overwrite original via File System Access API, fallback to download
+async function saveFile() {
+    if (!canvas.width) return;
+
+    // Try File System Access API (Chrome/Edge)
+    if (originalFile && 'showSaveFilePicker' in window) {
+        try {
+            // If we already have a handle, use it
+            if (!fileHandle) {
+                fileHandle = await window.showSaveFilePicker({
+                    suggestedName: originalFile.name,
+                    types: [{ description: 'PNG', accept: { 'image/png': ['.png'] } }],
+                });
+            }
+            const writable = await fileHandle.createWritable();
+            const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+            await writable.write(blob);
+            await writable.close();
+            document.getElementById('btn-save').style.background = '#0a4a0a';
+            setTimeout(() => document.getElementById('btn-save').style.background = '#1a6b1a', 600);
+            return;
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+            // Fall through to download
+        }
+    }
+    downloadFile();
+}
+
+function downloadFile() {
+    if (!canvas.width) return;
+    canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = originalFile ? originalFile.name : 'glyph.png';
+        a.click();
+        URL.revokeObjectURL(url);
+    }, 'image/png');
+}
+
+// Drop zone
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files[0]) loadImage(e.target.files[0]);
+});
+
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('over');
+    if (e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]);
+});
+
+// Also support dropping on the whole page
+document.body.addEventListener('dragover', (e) => e.preventDefault());
+document.body.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if (e.dataTransfer.files[0] && e.dataTransfer.files[0].type === 'image/png') {
+        loadImage(e.dataTransfer.files[0]);
+    }
+});
+
+// Keyboard shortcuts
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'b' || e.key === 'B') setTool('black');
+    if (e.key === 'e' || e.key === 'E') setTool('eraser');
+    if (e.key === 'g' || e.key === 'G') setTool('bucket');
+    if (e.key === '[') { brushSlider.value = Math.max(1, brushSize - 1); brushSlider.dispatchEvent(new Event('input')); }
+    if (e.key === ']') { brushSlider.value = Math.min(8, brushSize + 1); brushSlider.dispatchEvent(new Event('input')); }
+    if (e.key === '=' || e.key === '+') { e.preventDefault(); setZoom(zoom + 2); }
+    if (e.key === '-' || e.key === '_') { e.preventDefault(); setZoom(zoom - 2); }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); }
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); saveFile(); }
+});
+
+// Init
+setZoom(8);
+</script>
+</body>
+</html>

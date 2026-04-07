@@ -27,6 +27,7 @@ from scripts.helpers import (
     LINE_GAP,
     STANDALONE_CIRCLE,
     UNITS_PER_EM,
+    compute_global_scale,
     normalize_contours,
     parse_svg_to_contours,
 )
@@ -105,11 +106,11 @@ def add_mark_glyphs(
     above the baseline. circle_standalone has a non-zero advance width.
     Mutates *glyph_contours* in place.
     """
-    center_x = 250
-    mark_y = ASCENDER + 100  # above ascender line
+    center_x = 0  # mark drawn at x=0; GPOS anchor aligns this to base center
+    mark_y = ASCENDER + 140  # above ascender line
 
     # --- diamond_above (combining, zero-width) ---
-    diamond = create_diamond_contours(size=80)
+    diamond = create_diamond_contours(size=200)
     diamond_shifted = []
     for contour in diamond:
         diamond_shifted.append(
@@ -118,7 +119,7 @@ def add_mark_glyphs(
     glyph_contours["diamond_above"] = (diamond_shifted, 0)
 
     # --- circle_above (combining, zero-width) ---
-    circle = create_circle_contours(radius=40, hollow=True, segments=24)
+    circle = create_circle_contours(radius=100, hollow=True, segments=32)
     circle_shifted = []
     for contour in circle:
         circle_shifted.append(
@@ -127,15 +128,15 @@ def add_mark_glyphs(
     glyph_contours["circle_above"] = (circle_shifted, 0)
 
     # --- circle_standalone (visible glyph, non-zero width) ---
-    standalone = create_circle_contours(radius=40, hollow=True, segments=24)
+    standalone = create_circle_contours(radius=150, hollow=True, segments=32)
     standalone_y = 400  # centered vertically around midline
-    standalone_x = 60   # centered in a ~120-wide advance
+    standalone_x = 170  # centered in advance width
     standalone_shifted = []
     for contour in standalone:
         standalone_shifted.append(
             [(x + standalone_x, y + standalone_y, on) for x, y, on in contour]
         )
-    glyph_contours["circle_standalone"] = (standalone_shifted, 120)
+    glyph_contours["circle_standalone"] = (standalone_shifted, 340)
 
 
 # ---------------------------------------------------------------------------
@@ -372,8 +373,8 @@ def add_gpos_marks(
     # Anchor positions
     # Base anchor: above the centre of each base glyph
     # Mark anchor: at the "attachment" point of each mark
-    base_anchor_y = ASCENDER + 100
-    mark_anchor_y = ASCENDER + 100
+    base_anchor_y = ASCENDER + 140
+    mark_anchor_y = ASCENDER + 140
 
     # Build OpenType feature code
     lines = []
@@ -386,7 +387,7 @@ def add_gpos_marks(
         # The mark anchor is where the mark's own reference point is:
         # We place it at the same (center_x, mark_y) used when drawing the glyph
         lines.append(
-            "markClass %s <anchor 250 %d> @mark_top_%s;"
+            "markClass %s <anchor 0 %d> @mark_top_%s;"
             % (mark_name, mark_anchor_y, mark_name)
         )
 
@@ -479,25 +480,53 @@ def merge_donor_glyphs(target_path: str, donor_path: str) -> None:
     target.close()
 
 
-def create_bold_font(svg_dir: str, output_path: str, donor_font: str = None) -> None:
-    """Orchestrator: load SVGs, normalise, and build a Bold TTF.
+def _load_bitmap_heights(bitmaps_dir: str) -> dict[str, int]:
+    """Return {glyph_stem: pixel_height} for every PNG in *bitmaps_dir*."""
+    import cv2
+    heights: dict[str, int] = {}
+    bitmaps_path = Path(bitmaps_dir)
+    if bitmaps_path.exists():
+        for png in bitmaps_path.glob("*.png"):
+            img = cv2.imread(str(png), cv2.IMREAD_GRAYSCALE)
+            if img is not None:
+                heights[png.stem] = img.shape[0]
+    return heights
 
-    Parameters
-    ----------
-    svg_dir : str
-        Directory containing SVG glyph files.
-    output_path : str
-        Where to write the resulting ``.ttf``.
-    donor_font : str, optional
-        Path to a donor TrueType font from which Latin glyphs are merged.
-    """
+
+# Lamed is the only Hebrew letter with an ascender.
+ASCENDER_GLYPHS = {"lamed"}
+
+# Editor guide positions (in bitmap pixel space):
+#   Normal:   body top=2,  body bot=90   -> body = 88px
+#   Ascender: body top=22, body bot=112  -> body = 90px, ascender 20px above
+_ASCENDER_BODY_OFFSET_PX = 20  # pixels from bitmap top to body top for ascender glyphs
+
+
+def create_bold_font(svg_dir: str, output_path: str, donor_font: str = None) -> None:
+    """Orchestrator: load SVGs, normalise, and build a Bold TTF."""
     raw_glyphs = load_svg_glyphs(svg_dir)
+
+    # Compute a uniform scale so all glyphs keep their relative sizes
+    global_scale, global_top, baseline_y = compute_global_scale(raw_glyphs)
 
     # Normalise contours and compute advance widths
     glyph_contours: dict[str, tuple[list[list[tuple]], int]] = {}
     for name, contours in raw_glyphs.items():
-        normalised, adv_w = normalize_contours(contours)
+        normalised, adv_w = normalize_contours(
+            contours,
+            global_scale=global_scale,
+            global_top=global_top,
+            baseline_y=baseline_y,
+        )
         if normalised:
+            # Ascender glyphs: shift upward so body aligns with normal letters
+            if name in ASCENDER_GLYPHS:
+                y_shift = round(_ASCENDER_BODY_OFFSET_PX * global_scale)
+                normalised = [
+                    [(x, y + y_shift, on) for x, y, on in c]
+                    for c in normalised
+                ]
+
             # Add side bearings (about 5 % of advance width on each side)
             bearing = max(int(adv_w * 0.05), 10)
             shifted = []
@@ -578,10 +607,26 @@ def create_regular_font(svg_dir: str, output_path: str, donor_font: str = None) 
     raw_glyphs = load_svg_glyphs(svg_dir)
     stroke_width = int(UNITS_PER_EM * HOLLOW_STROKE_RATIO)
 
+    # Compute a uniform scale so all glyphs keep their relative sizes
+    global_scale, global_top, baseline_y = compute_global_scale(raw_glyphs)
+
     glyph_contours: dict[str, tuple[list[list[tuple]], int]] = {}
     for name, contours in raw_glyphs.items():
-        normalized, advance_width = normalize_contours(contours)
+        normalized, advance_width = normalize_contours(
+            contours,
+            global_scale=global_scale,
+            global_top=global_top,
+            baseline_y=baseline_y,
+        )
         if normalized:
+            # Ascender glyphs: shift upward so body aligns with normal letters
+            if name in ASCENDER_GLYPHS:
+                y_shift = round(_ASCENDER_BODY_OFFSET_PX * global_scale)
+                normalized = [
+                    [(x, y + y_shift, on) for x, y, on in c]
+                    for c in normalized
+                ]
+
             hollow = make_hollow_contours(normalized, stroke_width=stroke_width)
             bearing = max(int(advance_width * 0.05), 10)
             shifted = []
