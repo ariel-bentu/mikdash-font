@@ -396,7 +396,74 @@ def add_gpos_marks(
     font.close()
 
 
-def create_bold_font(svg_dir: str, output_path: str) -> None:
+def merge_donor_glyphs(target_path: str, donor_path: str) -> None:
+    """Merge Latin, numbers, and punctuation from donor font into target."""
+    donor = TTFont(donor_path)
+    target = TTFont(target_path)
+
+    donor_cmap = donor.getBestCmap()
+
+    # Codepoint ranges to borrow
+    borrow_ranges = [
+        (0x0020, 0x007E),   # Basic Latin (space through tilde)
+        (0x00A0, 0x00FF),   # Latin-1 Supplement
+    ]
+
+    existing_cmap = target.getBestCmap()
+    glyphs_to_copy = set()
+    new_cmap_entries = {}
+
+    for start, end in borrow_ranges:
+        for cp in range(start, end + 1):
+            if cp in existing_cmap:
+                continue
+            if cp in donor_cmap:
+                glyph_name = donor_cmap[cp]
+                glyphs_to_copy.add(glyph_name)
+                new_cmap_entries[cp] = glyph_name
+
+    # Also collect component dependencies (composite glyphs)
+    donor_glyf = donor["glyf"]
+    all_to_copy = set(glyphs_to_copy)
+    for glyph_name in glyphs_to_copy:
+        if glyph_name in donor_glyf:
+            glyph = donor_glyf[glyph_name]
+            if glyph.isComposite():
+                for component in glyph.components:
+                    all_to_copy.add(component.glyphName)
+
+    target_glyf = target["glyf"]
+    target_hmtx = target["hmtx"]
+    donor_hmtx = donor["hmtx"]
+    glyph_order = list(target.getGlyphOrder())
+
+    for glyph_name in sorted(all_to_copy):
+        if glyph_name in target_glyf:
+            continue
+        if glyph_name not in donor_glyf:
+            continue
+
+        target_glyf[glyph_name] = donor_glyf[glyph_name]
+        glyph_order.append(glyph_name)
+
+        if glyph_name in donor_hmtx.metrics:
+            target_hmtx.metrics[glyph_name] = donor_hmtx.metrics[glyph_name]
+
+    target.setGlyphOrder(glyph_order)
+
+    # Update cmap
+    for subtable in target["cmap"].tables:
+        if hasattr(subtable, "cmap"):
+            subtable.cmap.update(new_cmap_entries)
+
+    target["maxp"].numGlyphs = len(glyph_order)
+
+    target.save(target_path)
+    donor.close()
+    target.close()
+
+
+def create_bold_font(svg_dir: str, output_path: str, donor_font: str = None) -> None:
     """Orchestrator: load SVGs, normalise, and build a Bold TTF.
 
     Parameters
@@ -405,6 +472,8 @@ def create_bold_font(svg_dir: str, output_path: str) -> None:
         Directory containing SVG glyph files.
     output_path : str
         Where to write the resulting ``.ttf``.
+    donor_font : str, optional
+        Path to a donor TrueType font from which Latin glyphs are merged.
     """
     raw_glyphs = load_svg_glyphs(svg_dir)
 
@@ -430,6 +499,10 @@ def create_bold_font(svg_dir: str, output_path: str) -> None:
 
     # Add GPOS mark-to-base positioning
     add_gpos_marks(output_path, glyph_contours)
+
+    # Merge Latin/numbers from donor font
+    if donor_font and os.path.exists(donor_font):
+        merge_donor_glyphs(output_path, donor_font)
 
 
 def make_hollow_contours(
@@ -470,12 +543,21 @@ def make_hollow_contours(
     return result
 
 
-def create_regular_font(svg_dir: str, output_path: str) -> None:
+def create_regular_font(svg_dir: str, output_path: str, donor_font: str = None) -> None:
     """Create the Regular (hollow) weight of Mikdash font.
 
     Works like :func:`create_bold_font` but applies :func:`make_hollow_contours`
     to each glyph after normalisation so the glyphs appear as outlines rather
     than filled shapes.
+
+    Parameters
+    ----------
+    svg_dir : str
+        Directory containing SVG glyph files.
+    output_path : str
+        Where to write the resulting ``.ttf``.
+    donor_font : str, optional
+        Path to a donor TrueType font from which Latin glyphs are merged.
     """
     raw_glyphs = load_svg_glyphs(svg_dir)
     stroke_width = int(UNITS_PER_EM * HOLLOW_STROKE_RATIO)
@@ -499,3 +581,7 @@ def create_regular_font(svg_dir: str, output_path: str) -> None:
 
     # Add GPOS mark-to-base positioning
     add_gpos_marks(output_path, glyph_contours)
+
+    # Merge Latin/numbers from donor font
+    if donor_font and os.path.exists(donor_font):
+        merge_donor_glyphs(output_path, donor_font)

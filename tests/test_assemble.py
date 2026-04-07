@@ -76,3 +76,21 @@ def test_font_has_gpos_mark_positioning(tmp_path):
     font = TTFont(output_path)
     assert "GPOS" in font, "Missing GPOS table"
     font.close()
+
+
+def test_font_has_latin_and_numbers(tmp_path):
+    """Font should include Latin letters and numbers from EB Garamond."""
+    from scripts.assemble import create_bold_font
+
+    output_path = str(tmp_path / "Mikdash-Bold.ttf")
+    create_bold_font("glyphs/svg", output_path, donor_font="donor/EBGaramond-Bold.ttf")
+
+    from fontTools.ttLib import TTFont
+    font = TTFont(output_path)
+    cmap = font.getBestCmap()
+
+    assert ord("A") in cmap, "Missing Latin A"
+    assert ord("a") in cmap, "Missing Latin a"
+    assert ord("0") in cmap, "Missing digit 0"
+    assert ord(".") in cmap, "Missing period"
+    font.close()
