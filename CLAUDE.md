@@ -59,16 +59,27 @@ We tried ALL of the following — none work in browsers:
 |----------|-------------|
 | GPOS mark-to-base (PUA mark + Hebrew base) | Separate shaping runs — GPOS never sees them together |
 | GSUB ligature substitution (liga, ccmp, calt) | Same shaping-run split — GSUB rule never fires |
-| Real Hebrew combining marks (U+05C4, U+05AF) | Hebrew shaper applies its own positioning logic, overrides GPOS anchors |
 | Generic combining marks (U+0302, U+030A) | Wrong script run — Latin combining marks not shaped with Hebrew base |
 
 **All of these work in HarfBuzz CLI and FreeType/Pillow rendering** — the problem is browser-specific shaping behavior.
 
-### THE APPROACH THAT WORKS: Pre-composed PUA Glyphs
+### THE APPROACH THAT WORKS: Hijacked Hebrew Combining Marks
 
-Each letter+mark combination is a **single pre-composed glyph** at its own PUA codepoint. The mark contours are baked into the glyph at the correct position (centered above the letter). No GSUB, no GPOS, no combining — the browser just renders one glyph.
+We override two real Hebrew codepoints with our custom mark glyphs:
+- **U+05C4** (HEBREW MARK UPPER DOT) → diamond above
+- **U+05AF** (HEBREW MARK MASORA CIRCLE) → circle above
 
-This is implemented in `scripts/assemble_from_font.py` → `add_mark_glyphs()`.
+Because these are real Hebrew-script codepoints, the browser's shaper keeps them in the **same shaping run** as Hebrew letters. Our GPOS mark-to-base anchors then position them correctly — centered above each letter based on that letter's advance width.
+
+Usage: type a Hebrew letter followed by U+05C4 (diamond) or U+05AF (circle). The mark auto-centers.
+
+This is implemented in `scripts/assemble_from_font.py`:
+- `add_mark_glyphs()` — creates the mark glyphs
+- `add_gpos_marks()` — adds GPOS mark-to-base positioning
+
+### FALLBACK: Pre-composed PUA Glyphs
+
+Each letter+mark combination also exists as a **single pre-composed glyph** at its own PUA codepoint (U+E100–E135). The mark contours are baked into the glyph. No GPOS needed — the browser just renders one glyph. Use these when GPOS is unavailable.
 
 ### How Mark Positioning Is Calculated
 
@@ -77,9 +88,9 @@ This is implemented in `scripts/assemble_from_font.py` → `add_mark_glyphs()`.
 typical_top = glyph_tops[len(glyph_tops) * 3 // 4]
 mark_y = typical_top + 150  # gap above letters
 
-# For each base letter:
-center_x = base_adv_w // 2  # horizontal center of the letter
-# Mark contours are shifted to (center_x, mark_y)
+# GPOS anchors: base anchor at (advW/2, mark_y), mark anchor at (0, mark_y)
+# Pre-composed: mark contours shifted to (advW/2, mark_y)
+# Exception: lamed's circle mark is at 60% of advW (shifted right to avoid ascender)
 ```
 
 ### LSB Must Match xMin
@@ -122,6 +133,13 @@ The source font (FrankRuehlCLM) has inconsistent side bearings — narrow letter
 | | | ר Resh | U+05E8 |
 | | | ש Shin | U+05E9 |
 | | | ת Tav | U+05EA |
+
+### Combining Marks (recommended — type after any Hebrew letter)
+
+| Mark | Codepoint | Original Unicode name | HTML |
+|------|-----------|----------------------|------|
+| Diamond above | U+05C4 | HEBREW MARK UPPER DOT | `&#x05C4;` |
+| Circle above | U+05AF | HEBREW MARK MASORA CIRCLE | `&#x05AF;` |
 
 ### Standalone Marks (PUA)
 
@@ -258,7 +276,7 @@ fontMikdash/
 | Ascender | 800 |
 | Descender | -200 |
 | Line gap | 0 |
-| Hollow stroke ratio | 3.5% of em (Regular weight) |
+| Hollow stroke ratio | 3% of em (Regular weight) |
 
 ## Dependencies
 

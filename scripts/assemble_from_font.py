@@ -26,6 +26,8 @@ from scripts.helpers import (
     COMPOSED_DIAMOND,
     DESCENDER,
     FONT_FAMILY,
+    HEBREW_COMBINING_CIRCLE,
+    HEBREW_COMBINING_DIAMOND,
     HEBREW_LETTERS,
     HOLLOW_STROKE_RATIO,
     LINE_GAP,
@@ -170,6 +172,8 @@ MARK_CODEPOINTS = {
     "diamond_above": COMBINING_DIAMOND,
     "circle_above": COMBINING_CIRCLE,
     "circle_standalone": STANDALONE_CIRCLE,
+    "hebrew_diamond": HEBREW_COMBINING_DIAMOND,
+    "hebrew_circle": HEBREW_COMBINING_CIRCLE,
 }
 
 
@@ -195,6 +199,18 @@ def create_circle_contours(radius: int = 100, hollow: bool = True, segments: int
                           round(inner_r * math.sin(angle)), True))
         contours.append(inner)
     return contours
+
+
+def _mark_anchor_x(base_name, base_contours, base_adv_w, mark_type="diamond"):
+    """Compute the x position for the mark anchor above a base glyph.
+
+    Most letters use the centre of the advance width.  Lamed's ascender
+    rises from the left half of the glyph, so the circle mark is shifted
+    slightly to the right to avoid collision.  Diamond is fine centred.
+    """
+    if base_name == "lamed" and mark_type == "circle":
+        return round(base_adv_w * 0.60)
+    return base_adv_w // 2
 
 
 def add_mark_glyphs(glyph_contours):
@@ -239,6 +255,16 @@ def add_mark_glyphs(glyph_contours):
         [[(x + standalone_x, y + standalone_y, on) for x, y, on in c] for c in standalone], 240
     )
 
+    # --- Hebrew combining marks (zero-width, positioned by GPOS) ---
+    # These use real Hebrew codepoints so they stay in the same shaping run.
+    # Contours centered at x=0; GPOS mark-to-base anchors handle positioning.
+    glyph_contours["hebrew_diamond"] = (
+        [[(x, y + mark_y, on) for x, y, on in c] for c in diamond_template], 0
+    )
+    glyph_contours["hebrew_circle"] = (
+        [[(x, y + mark_y, on) for x, y, on in c] for c in circle_template], 0
+    )
+
     # --- Pre-composed letter+mark glyphs (one PUA codepoint each) ---
     for base_name in list(glyph_contours.keys()):
         if base_name in ("diamond_above", "circle_above", "circle_standalone"):
@@ -247,11 +273,11 @@ def add_mark_glyphs(glyph_contours):
             continue
 
         base_contours, base_adv_w = glyph_contours[base_name]
-        center_x = base_adv_w // 2
 
         # letter + diamond
+        diamond_x = _mark_anchor_x(base_name, base_contours, base_adv_w, "diamond")
         diamond_contours = [
-            [(x + center_x, y + mark_y, on) for x, y, on in c]
+            [(x + diamond_x, y + mark_y, on) for x, y, on in c]
             for c in diamond_template
         ]
         glyph_contours[f"{base_name}_diamond"] = (
@@ -259,8 +285,9 @@ def add_mark_glyphs(glyph_contours):
         )
 
         # letter + circle
+        circle_x = _mark_anchor_x(base_name, base_contours, base_adv_w, "circle")
         circle_contours_mark = [
-            [(x + center_x, y + mark_y, on) for x, y, on in c]
+            [(x + circle_x, y + mark_y, on) for x, y, on in c]
             for c in circle_template
         ]
         glyph_contours[f"{base_name}_circle"] = (
@@ -268,6 +295,72 @@ def add_mark_glyphs(glyph_contours):
         )
 
     return mark_y
+
+
+def add_gpos_marks(font_path, glyph_contours, mark_y):
+    """Add GPOS mark-to-base positioning for Hebrew combining marks.
+
+    Uses separate lookups for diamond and circle so that per-letter
+    anchor offsets (e.g. lamed circle shifted right) work correctly.
+    """
+    from fontTools.feaLib.builder import addOpenTypeFeaturesFromString
+
+    has_diamond = "hebrew_diamond" in glyph_contours
+    has_circle = "hebrew_circle" in glyph_contours
+    if not has_diamond and not has_circle:
+        return
+
+    base_names = sorted(
+        name for name in glyph_contours
+        if name in HEBREW_LETTERS
+    )
+    if not base_names:
+        return
+
+    font = TTFont(font_path)
+
+    lines = []
+
+    # Separate mark class + lookup for each mark type
+    if has_diamond:
+        lines.append(
+            "markClass hebrew_diamond <anchor 0 %d> @mark_diamond;" % mark_y
+        )
+    if has_circle:
+        lines.append(
+            "markClass hebrew_circle <anchor 0 %d> @mark_circle;" % mark_y
+        )
+
+    lines.append("feature mark {")
+
+    if has_diamond:
+        lines.append("  lookup mark2base_diamond {")
+        for base_name in base_names:
+            base_contours, adv_w = glyph_contours[base_name]
+            anchor_x = _mark_anchor_x(base_name, base_contours, adv_w, "diamond")
+            lines.append(
+                "    pos base %s <anchor %d %d> mark @mark_diamond;"
+                % (base_name, anchor_x, mark_y)
+            )
+        lines.append("  } mark2base_diamond;")
+
+    if has_circle:
+        lines.append("  lookup mark2base_circle {")
+        for base_name in base_names:
+            base_contours, adv_w = glyph_contours[base_name]
+            anchor_x = _mark_anchor_x(base_name, base_contours, adv_w, "circle")
+            lines.append(
+                "    pos base %s <anchor %d %d> mark @mark_circle;"
+                % (base_name, anchor_x, mark_y)
+            )
+        lines.append("  } mark2base_circle;")
+
+    lines.append("} mark;")
+
+    fea_code = "\n".join(lines)
+    addOpenTypeFeaturesFromString(font, fea_code)
+    font.save(font_path)
+    font.close()
 
 
 # ---------------------------------------------------------------------------
@@ -453,19 +546,21 @@ def build_from_source(
     glyph_contours = normalize_side_bearings(glyph_contours)
 
     # Add marks and pre-composed letter+mark glyphs
-    add_mark_glyphs(glyph_contours)
+    mark_y = add_mark_glyphs(glyph_contours)
 
     # --- Bold ---
     bold_path = os.path.join(output_dir, "Mikdash-Bold.ttf")
     print(f"Building Bold -> {bold_path}")
     build_font_from_contours(glyph_contours, FONT_FAMILY, "Bold", bold_path)
+    add_gpos_marks(bold_path, glyph_contours, mark_y)
     if donor_font and os.path.exists(donor_font):
         merge_donor_glyphs(bold_path, donor_font)
 
     # --- Regular (hollow) ---
-    stroke_width = int(UNITS_PER_EM * 0.02)
+    stroke_width = int(UNITS_PER_EM * 0.03)
     hollow_contours = {}
-    skip_hollow = {"diamond_above", "circle_above", "circle_standalone"}
+    skip_hollow = {"diamond_above", "circle_above", "circle_standalone",
+                   "hebrew_diamond", "hebrew_circle"}
     for name, (contours, adv_w) in glyph_contours.items():
         if name in skip_hollow:
             hollow_contours[name] = (contours, adv_w)
@@ -487,6 +582,7 @@ def build_from_source(
     regular_path = os.path.join(output_dir, "Mikdash-Regular.ttf")
     print(f"Building Regular -> {regular_path}")
     build_font_from_contours(hollow_contours, FONT_FAMILY, "Regular", regular_path)
+    add_gpos_marks(regular_path, glyph_contours, mark_y)
     if donor_font and os.path.exists(donor_font):
         merge_donor_glyphs(regular_path, donor_font)
 

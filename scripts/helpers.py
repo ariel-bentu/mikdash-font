@@ -31,10 +31,18 @@ HEBREW_LETTERS = {
     "tav": 0x05EA,
 }
 
-# Special marks — PUA codepoints
-COMBINING_DIAMOND = 0xE001  # standalone diamond mark
-COMBINING_CIRCLE = 0xE002   # standalone circle mark
+# Special marks — PUA codepoints (legacy, used as fallback)
+COMBINING_DIAMOND = 0xE001  # standalone diamond mark (PUA)
+COMBINING_CIRCLE = 0xE002   # standalone circle mark (PUA)
 STANDALONE_CIRCLE = 0x25CB  # WHITE CIRCLE — standalone glyph
+
+# True Hebrew combining marks — hijacked codepoints for browser-native
+# combining behaviour. The font replaces the standard glyphs with our
+# diamond/circle shapes and uses GPOS mark-to-base for positioning.
+#   U+05C4 HEBREW MARK UPPER DOT  → diamond above
+#   U+05AF HEBREW MARK MASORA CIRCLE → circle above
+HEBREW_COMBINING_DIAMOND = 0x05C4
+HEBREW_COMBINING_CIRCLE = 0x05AF
 
 # Pre-composed letter+mark PUA codepoints
 # Each Hebrew letter + diamond/circle gets its own codepoint so the browser
@@ -59,7 +67,7 @@ DESCENDER = -200
 LINE_GAP = 0
 
 # Stroke width for hollow (Regular) glyphs, as fraction of UPM
-HOLLOW_STROKE_RATIO = 0.035  # 3.5% of em — calibrated from image
+HOLLOW_STROKE_RATIO = 0.03  # 3% of em
 
 FONT_FAMILY = "Mikdash"
 

@@ -29,22 +29,33 @@ Install by double-clicking the `.ttf` files (macOS/Windows) or copying them to y
 
 ## Using the Special Marks
 
-Each letter+mark combination is a single pre-composed glyph at a Private Use Area (PUA) Unicode codepoint. In HTML:
+### Recommended: Combining marks
+
+Type a Hebrew letter followed by a combining character. The mark automatically centers above the letter — works with **any** Hebrew letter, no lookup table needed.
+
+| Mark | Unicode | HTML | macOS shortcut |
+|------|---------|------|----------------|
+| Diamond above | U+05C4 | `&#x05C4;` | Ctrl+Cmd+Space → "upper dot" |
+| Circle above | U+05AF | `&#x05AF;` | Ctrl+Cmd+Space → "masora" |
+| Standalone circle | U+25CB | `○` | Ctrl+Cmd+Space → "white circle" |
 
 ```html
-<!-- Letter with diamond above -->
-&#xE100;  <!-- alef + diamond -->
-&#xE119;  <!-- shin + diamond -->
-
-<!-- Letter with circle above -->
-&#xE11B;  <!-- alef + circle -->
-&#xE134;  <!-- shin + circle -->
-
-<!-- Standalone circle -->
-&#x25CB;
+<!-- Type letter + combining mark — auto-positioned -->
+<span>א&#x05C4;</span>  <!-- alef + diamond -->
+<span>ש&#x05AF;</span>  <!-- shin + circle -->
 ```
 
-### Codepoint Reference
+**macOS typing tips:**
+- **Character Viewer:** Press `Ctrl+Cmd+Space` to open the emoji/character picker. Search "upper dot" or "masora".
+- **Unicode Hex Input:** Add "Unicode Hex Input" keyboard in System Settings → Keyboard → Input Sources. Hold Option and type `05C4` (diamond) or `05AF` (circle).
+- **Text Replacement:** Add shortcuts in System Settings → Keyboard → Text Replacements, e.g. `;d` → `◌ׄ` and `;c` → `◌֯`.
+
+### Alternative: Pre-composed PUA glyphs
+
+Each letter+mark combination also exists as a single glyph at a Private Use Area codepoint (U+E100–E135). These work everywhere but require per-letter lookup.
+
+<details>
+<summary>Full PUA codepoint reference</summary>
 
 | Letter | + Diamond | + Circle | | Letter | + Diamond | + Circle |
 |--------|-----------|----------|-|--------|-----------|----------|
@@ -63,6 +74,8 @@ Each letter+mark combination is a single pre-composed glyph at a Private Use Are
 | ל Lamed | U+E10C | U+E127 | | | | |
 | מ Mem | U+E10D | U+E128 | | | | |
 | ם Final Mem | U+E10E | U+E129 | | | | |
+
+</details>
 
 ### Test Page
 
@@ -109,14 +122,18 @@ python -m pytest tests/ -v
 
 1. Hebrew glyph contours are extracted from `FrankRuehlCLM-Medium.otf`
 2. Side bearings are normalized to 6% of ink width for consistent letter spacing
-3. Pre-composed letter+mark glyphs are created — each letter+diamond and letter+circle combination is a single glyph with the mark baked in at the correct position (centered above the letter)
-4. **Bold** uses the filled contours directly
-5. **Regular** applies an inward polygon offset (via pyclipper) to create hollow outlines
-6. Latin characters, numbers, and punctuation are merged from EB Garamond
+3. **Combining marks** are added using hijacked Hebrew codepoints (U+05C4 → diamond, U+05AF → circle) with GPOS mark-to-base anchors that auto-center the mark above any letter
+4. Pre-composed PUA glyphs (U+E100–E135) are also generated as a fallback — each is a single glyph with the mark baked in
+5. **Bold** uses the filled contours directly
+6. **Regular** applies an inward polygon offset (via pyclipper) to create hollow outlines
+7. Latin characters, numbers, and punctuation are merged from EB Garamond
 
-### Why Pre-composed Glyphs?
+### Two Mark Approaches
 
-Web browsers (Chrome, Safari, Firefox) do not apply OpenType GPOS or GSUB features across Hebrew letters and Private Use Area characters — the HarfBuzz text shaper splits them into separate shaping runs. Pre-composed single-codepoint glyphs bypass this limitation entirely.
+| Approach | How it works | When to use |
+|----------|-------------|-------------|
+| **Combining** (recommended) | Type letter + U+05C4 or U+05AF. GPOS positions the mark per-letter. | Normal text editing, any app with the font installed |
+| **Pre-composed PUA** (fallback) | Single codepoint per letter+mark combo (U+E100–E135) | Environments where GPOS may not work |
 
 ## License
 
