@@ -1,8 +1,8 @@
-# Mikdash Font Implementation Plan
+# NewMikdash Font Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Reverse-engineer the Hebrew typeface from `font.jpg` into a TTF font family (Mikdash-Regular = hollow, Mikdash-Bold = filled) with combining diacritical marks (diamond, circle) and borrowed Latin/numbers from EB Garamond.
+**Goal:** Reverse-engineer the Hebrew typeface from `font.jpg` into a TTF font family (NewMikdash-Regular = hollow, NewMikdash-Bold = filled) with combining diacritical marks (diamond, circle) and borrowed Latin/numbers from EB Garamond.
 
 **Architecture:** A 4-stage Python pipeline: (1) preprocess the scanned image, (2) segment and extract individual Hebrew glyphs as bitmaps, (3) vectorize bitmaps to SVG via potrace, (4) assemble SVGs into TTF fonts using fontTools with pyclipper for hollow glyph generation. Each stage is a standalone script that reads from the previous stage's output directory.
 
@@ -13,7 +13,7 @@
 ## File Structure
 
 ```
-fontMikdash/
+fontNewMikdash/
 ├── font.jpg                          # Source image (existing)
 ├── requirements.txt                  # Python dependencies
 ├── scripts/
@@ -28,8 +28,8 @@ fontMikdash/
 ├── donor/
 │   └── EBGaramond-Regular.ttf        # Downloaded EB Garamond for Latin/numbers
 ├── output/
-│   ├── Mikdash-Regular.ttf
-│   └── Mikdash-Bold.ttf
+│   ├── NewMikdash-Regular.ttf
+│   └── NewMikdash-Bold.ttf
 └── tests/
     ├── test_preprocess.py
     ├── test_segment.py
@@ -89,7 +89,7 @@ Expected: all packages install without errors.
 - [ ] **Step 5: Create helpers.py with shared constants**
 
 ```python
-"""Shared constants for the Mikdash font pipeline."""
+"""Shared constants for the NewMikdash font pipeline."""
 
 # Hebrew letter names and their Unicode codepoints
 HEBREW_LETTERS = {
@@ -136,7 +136,7 @@ LINE_GAP = 0
 # Stroke width for hollow (Regular) glyphs, as fraction of UPM
 HOLLOW_STROKE_RATIO = 0.06  # 6% of em — will calibrate from image
 
-FONT_FAMILY = "Mikdash"
+FONT_FAMILY = "NewMikdash"
 ```
 
 - [ ] **Step 6: Create directory structure**
@@ -195,7 +195,7 @@ def test_preprocess_saves_output():
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_preprocess.py -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_preprocess.py -v`
 Expected: FAIL — module not found
 
 - [ ] **Step 3: Implement 01_preprocess.py**
@@ -247,12 +247,12 @@ if __name__ == "__main__":
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_preprocess.py -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_preprocess.py -v`
 Expected: PASS
 
 - [ ] **Step 5: Run the script standalone and visually inspect**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python scripts/01_preprocess.py`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python scripts/01_preprocess.py`
 Expected: prints image dimensions, creates `glyphs/preprocessed.png`. Open the file and verify text is cleanly separated from background.
 
 - [ ] **Step 6: Commit**
@@ -312,7 +312,7 @@ def test_segment_bitmaps_are_valid_images():
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_segment.py -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_segment.py -v`
 Expected: FAIL — module not found
 
 - [ ] **Step 3: Implement 02_segment.py**
@@ -482,12 +482,12 @@ if __name__ == "__main__":
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_segment.py -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_segment.py -v`
 Expected: PASS (requires preprocessed.png from Task 2)
 
 - [ ] **Step 5: Run standalone and inspect results**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python scripts/02_segment.py`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python scripts/02_segment.py`
 Expected: prints line count and character count. Inspect `glyphs/bitmaps/` — each file should contain a cleanly isolated Hebrew character.
 
 - [ ] **Step 6: Manual glyph identification**
@@ -567,7 +567,7 @@ def test_vectorize_all_produces_svgs():
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_vectorize.py -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_vectorize.py -v`
 Expected: FAIL — module not found
 
 - [ ] **Step 3: Implement 03_vectorize.py**
@@ -685,12 +685,12 @@ if __name__ == "__main__":
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_vectorize.py -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_vectorize.py -v`
 Expected: PASS (requires potrace installed and bitmap files from Task 3)
 
 - [ ] **Step 5: Run standalone and inspect SVGs**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python scripts/03_vectorize.py`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python scripts/03_vectorize.py`
 Expected: SVGs in `glyphs/svg/`. Open them in a browser or Inkscape to verify glyph outlines look correct. This is the key quality checkpoint — look for:
 - Clean, smooth curves
 - No stray artifacts
@@ -755,7 +755,7 @@ def test_parse_svg_multiple_contours():
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_svg_parser.py -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_svg_parser.py -v`
 Expected: FAIL — function not found
 
 - [ ] **Step 3: Add SVG parsing to helpers.py**
@@ -927,7 +927,7 @@ def normalize_contours(
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_svg_parser.py -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_svg_parser.py -v`
 Expected: PASS
 
 - [ ] **Step 5: Commit**
@@ -960,7 +960,7 @@ def test_create_bold_font(tmp_path):
     """Should create a valid TTF file for Bold weight."""
     from scripts.assemble import create_bold_font
 
-    output_path = str(tmp_path / "Mikdash-Bold.ttf")
+    output_path = str(tmp_path / "NewMikdash-Bold.ttf")
     create_bold_font("glyphs/svg", output_path)
     assert os.path.exists(output_path)
     assert os.path.getsize(output_path) > 100  # not an empty file
@@ -979,7 +979,7 @@ def test_create_bold_font(tmp_path):
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_assemble.py::test_create_bold_font -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_assemble.py::test_create_bold_font -v`
 Expected: FAIL — module not found
 
 - [ ] **Step 3: Implement create_bold_font in 04_assemble.py**
@@ -990,8 +990,8 @@ Create `scripts/assemble.py`:
 """Step 4: Assemble SVG glyphs into TTF font files.
 
 Creates two weights:
-- Mikdash-Bold.ttf  — filled glyphs (direct from SVG contours)
-- Mikdash-Regular.ttf — hollow glyphs (stroke outlines via pyclipper)
+- NewMikdash-Bold.ttf  — filled glyphs (direct from SVG contours)
+- NewMikdash-Regular.ttf — hollow glyphs (stroke outlines via pyclipper)
 """
 
 import glob
@@ -1148,7 +1148,7 @@ def _build_glyf_dict(
 
 
 def create_bold_font(svg_dir: str, output_path: str) -> None:
-    """Create the Bold (filled) weight of Mikdash font."""
+    """Create the Bold (filled) weight of NewMikdash font."""
     raw_glyphs = load_svg_glyphs(svg_dir)
 
     # Normalize all glyphs
@@ -1168,12 +1168,12 @@ def create_bold_font(svg_dir: str, output_path: str) -> None:
 
 
 if __name__ == "__main__":
-    create_bold_font("glyphs/svg", "output/Mikdash-Bold.ttf")
+    create_bold_font("glyphs/svg", "output/NewMikdash-Bold.ttf")
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_assemble.py::test_create_bold_font -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_assemble.py::test_create_bold_font -v`
 Expected: PASS (requires SVG files from Task 4)
 
 - [ ] **Step 5: Commit**
@@ -1213,7 +1213,7 @@ def test_create_regular_font(tmp_path):
     """Should create a valid TTF for Regular (hollow) weight."""
     from scripts.assemble import create_regular_font
 
-    output_path = str(tmp_path / "Mikdash-Regular.ttf")
+    output_path = str(tmp_path / "NewMikdash-Regular.ttf")
     create_regular_font("glyphs/svg", output_path)
     assert os.path.exists(output_path)
 
@@ -1227,7 +1227,7 @@ def test_create_regular_font(tmp_path):
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_assemble.py::test_create_hollow_contours -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_assemble.py::test_create_hollow_contours -v`
 Expected: FAIL — function not found
 
 - [ ] **Step 3: Add hollow generation to 04_assemble.py**
@@ -1281,7 +1281,7 @@ def make_hollow_contours(
 
 
 def create_regular_font(svg_dir: str, output_path: str) -> None:
-    """Create the Regular (hollow) weight of Mikdash font."""
+    """Create the Regular (hollow) weight of NewMikdash font."""
     from scripts.helpers import HOLLOW_STROKE_RATIO
 
     raw_glyphs = load_svg_glyphs(svg_dir)
@@ -1304,7 +1304,7 @@ def create_regular_font(svg_dir: str, output_path: str) -> None:
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_assemble.py -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_assemble.py -v`
 Expected: all PASS
 
 - [ ] **Step 5: Commit**
@@ -1334,7 +1334,7 @@ def test_font_has_combining_marks(tmp_path):
     from scripts.assemble import create_bold_font
     from scripts.helpers import COMBINING_CIRCLE, COMBINING_DIAMOND, STANDALONE_CIRCLE
 
-    output_path = str(tmp_path / "Mikdash-Bold.ttf")
+    output_path = str(tmp_path / "NewMikdash-Bold.ttf")
     create_bold_font("glyphs/svg", output_path)
 
     from fontTools.ttLib import TTFont
@@ -1351,7 +1351,7 @@ def test_font_has_gpos_mark_positioning(tmp_path):
     """Font should have GPOS table with mark-to-base positioning."""
     from scripts.assemble import create_bold_font
 
-    output_path = str(tmp_path / "Mikdash-Bold.ttf")
+    output_path = str(tmp_path / "NewMikdash-Bold.ttf")
     create_bold_font("glyphs/svg", output_path)
 
     from fontTools.ttLib import TTFont
@@ -1362,7 +1362,7 @@ def test_font_has_gpos_mark_positioning(tmp_path):
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_assemble.py::test_font_has_combining_marks -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_assemble.py::test_font_has_combining_marks -v`
 Expected: FAIL — marks not in cmap
 
 - [ ] **Step 3: Add mark glyphs and GPOS to 04_assemble.py**
@@ -1641,7 +1641,7 @@ Apply the same pattern to `create_regular_font`.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_assemble.py -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_assemble.py -v`
 Expected: all PASS
 
 - [ ] **Step 5: Commit**
@@ -1670,7 +1670,7 @@ def test_font_has_latin_and_numbers(tmp_path):
     """Font should include Latin letters and numbers from EB Garamond."""
     from scripts.assemble import create_bold_font
 
-    output_path = str(tmp_path / "Mikdash-Bold.ttf")
+    output_path = str(tmp_path / "NewMikdash-Bold.ttf")
     create_bold_font("glyphs/svg", output_path, donor_font="donor/EBGaramond-Regular.ttf")
 
     from fontTools.ttLib import TTFont
@@ -1687,7 +1687,7 @@ def test_font_has_latin_and_numbers(tmp_path):
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_assemble.py::test_font_has_latin_and_numbers -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_assemble.py::test_font_has_latin_and_numbers -v`
 Expected: FAIL
 
 - [ ] **Step 3: Add donor font merging to 04_assemble.py**
@@ -1796,7 +1796,7 @@ def create_bold_font(svg_dir: str, output_path: str, donor_font: str = None) -> 
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_assemble.py -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_assemble.py -v`
 Expected: all PASS
 
 - [ ] **Step 5: Commit**
@@ -1835,8 +1835,8 @@ def test_full_pipeline_produces_fonts(tmp_path):
         donor_font="donor/EBGaramond-Regular.ttf",
     )
 
-    regular = tmp_path / "Mikdash-Regular.ttf"
-    bold = tmp_path / "Mikdash-Bold.ttf"
+    regular = tmp_path / "NewMikdash-Regular.ttf"
+    bold = tmp_path / "NewMikdash-Bold.ttf"
     assert regular.exists(), "Missing Regular weight"
     assert bold.exists(), "Missing Bold weight"
 
@@ -1852,7 +1852,7 @@ def test_full_pipeline_produces_fonts(tmp_path):
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_e2e.py -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_e2e.py -v`
 Expected: FAIL — module not found
 
 - [ ] **Step 3: Implement build.py**
@@ -1860,7 +1860,7 @@ Expected: FAIL — module not found
 Create `scripts/build.py`:
 
 ```python
-"""Mikdash Font — Full build pipeline.
+"""NewMikdash Font — Full build pipeline.
 
 Usage: python scripts/build.py [--source font.jpg] [--output output/] [--donor donor/EBGaramond-Regular.ttf]
 """
@@ -1885,7 +1885,7 @@ def build_all(
 ) -> None:
     """Run the full pipeline: preprocess → segment → vectorize → assemble."""
     print("=" * 60)
-    print("Mikdash Font Build Pipeline")
+    print("NewMikdash Font Build Pipeline")
     print("=" * 60)
 
     # Step 1: Preprocess
@@ -1927,8 +1927,8 @@ def build_all(
     print("\n[4/4] Assembling fonts...")
     os.makedirs(output_dir, exist_ok=True)
 
-    bold_path = os.path.join(output_dir, "Mikdash-Bold.ttf")
-    regular_path = os.path.join(output_dir, "Mikdash-Regular.ttf")
+    bold_path = os.path.join(output_dir, "NewMikdash-Bold.ttf")
+    regular_path = os.path.join(output_dir, "NewMikdash-Regular.ttf")
 
     create_bold_font("glyphs/svg", bold_path, donor_font=donor_font)
     create_regular_font("glyphs/svg", regular_path, donor_font=donor_font)
@@ -1941,7 +1941,7 @@ def build_all(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Build Mikdash font")
+    parser = argparse.ArgumentParser(description="Build NewMikdash font")
     parser.add_argument("--source", default="font.jpg", help="Source image path")
     parser.add_argument("--output", default="output", help="Output directory")
     parser.add_argument("--donor", default="donor/EBGaramond-Regular.ttf", help="Donor font path")
@@ -1952,7 +1952,7 @@ if __name__ == "__main__":
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/test_e2e.py -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/test_e2e.py -v`
 Expected: PASS (requires all previous pipeline outputs)
 
 - [ ] **Step 5: Commit**
@@ -1968,14 +1968,14 @@ git commit -m "feat: add end-to-end build pipeline orchestrator"
 
 - [ ] **Step 1: Run the full test suite**
 
-Run: `cd /Users/i022021/dev/fontMikdash && python -m pytest tests/ -v`
+Run: `cd /Users/i022021/dev/fontNewMikdash && python -m pytest tests/ -v`
 Expected: all tests PASS
 
 - [ ] **Step 2: Build the fonts from scratch**
 
 Run:
 ```bash
-cd /Users/i022021/dev/fontMikdash
+cd /Users/i022021/dev/fontNewMikdash
 python scripts/build.py
 ```
 
@@ -1983,11 +1983,11 @@ python scripts/build.py
 
 Run:
 ```bash
-cd /Users/i022021/dev/fontMikdash
+cd /Users/i022021/dev/fontNewMikdash
 python -c "
 from fontTools.ttLib import TTFont
 
-for name in ['output/Mikdash-Bold.ttf', 'output/Mikdash-Regular.ttf']:
+for name in ['output/NewMikdash-Bold.ttf', 'output/NewMikdash-Regular.ttf']:
     font = TTFont(name)
     cmap = font.getBestCmap()
     hebrew = {hex(cp): cmap[cp] for cp in cmap if 0x05D0 <= cp <= 0x05EA}
@@ -2004,7 +2004,7 @@ Expected: both fonts have Hebrew glyphs, Latin glyphs, and GPOS table.
 
 - [ ] **Step 4: Install and test visually**
 
-Open `output/Mikdash-Bold.ttf` and `output/Mikdash-Regular.ttf` in Font Book (macOS) or a text editor that supports custom fonts. Type Hebrew text and verify:
+Open `output/NewMikdash-Bold.ttf` and `output/NewMikdash-Regular.ttf` in Font Book (macOS) or a text editor that supports custom fonts. Type Hebrew text and verify:
 - Characters render correctly
 - Bold is filled, Regular is hollow
 - Combining marks (diamond, circle) position above letters
@@ -2015,5 +2015,5 @@ Open `output/Mikdash-Bold.ttf` and `output/Mikdash-Regular.ttf` in Font Book (ma
 
 ```bash
 git add -A
-git commit -m "feat: complete Mikdash font pipeline - Bold and Regular weights"
+git commit -m "feat: complete NewMikdash font pipeline - Bold and Regular weights"
 ```

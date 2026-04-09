@@ -1,11 +1,11 @@
-# Mikdash Font — Design Spec
+# NewMikdash Font — Design Spec
 
 ## Overview
 
-Reverse-engineer the Hebrew typeface from `font.jpg` (a scholarly Dead Sea Scrolls transcription, Column VII) into a TTF font family called **Mikdash** with two weights:
+Reverse-engineer the Hebrew typeface from `font.jpg` (a scholarly Dead Sea Scrolls transcription, Column VII) into a TTF font family called **NewMikdash** with two weights:
 
-- **Mikdash-Regular** — hollow (outline-only) glyphs
-- **Mikdash-Bold** — filled (solid) glyphs
+- **NewMikdash-Regular** — hollow (outline-only) glyphs
+- **NewMikdash-Bold** — filled (solid) glyphs
 
 ## Source Material
 
@@ -83,7 +83,7 @@ Derived from image measurements:
   - Mark-to-base anchors: each Hebrew base glyph has an anchor above center
   - Diamond and circle combining marks have corresponding anchors
   - Allows any Hebrew letter to combine with either mark
-- `name` — Font family: "Mikdash", subfamilies: "Regular", "Bold"
+- `name` — Font family: "NewMikdash", subfamilies: "Regular", "Bold"
 - `OS/2` — Weight class, Unicode ranges, script coverage
 - `head`, `hhea`, `hmtx`, `maxp`, `post` — standard required tables
 
@@ -123,12 +123,12 @@ Derived from image measurements:
 - Set font metrics (ascender, descender, advance widths)
 - Add combining mark anchors for diamond and circle
 - Add standalone circle glyph
-- Output: `output/Mikdash-Regular.ttf` and `output/Mikdash-Bold.ttf`
+- Output: `output/NewMikdash-Regular.ttf` and `output/NewMikdash-Bold.ttf`
 
 ## File Structure
 
 ```
-fontMikdash/
+fontNewMikdash/
 ├── font.jpg                          # Source image
 ├── scripts/
 │   ├── preprocess.py              # Image cleanup
@@ -142,8 +142,8 @@ fontMikdash/
 ├── docs/superpowers/specs/
 │   └── 2026-04-07-mikdash-font-design.md
 └── output/
-    ├── Mikdash-Regular.ttf
-    └── Mikdash-Bold.ttf
+    ├── NewMikdash-Regular.ttf
+    └── NewMikdash-Bold.ttf
 ```
 
 ## Dependencies

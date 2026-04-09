@@ -6,7 +6,7 @@ def test_create_bold_font(tmp_path):
     """Should create a valid TTF file for Bold weight."""
     from scripts.assemble import create_bold_font
 
-    output_path = str(tmp_path / "Mikdash-Bold.ttf")
+    output_path = str(tmp_path / "NewMikdash-Bold.ttf")
     create_bold_font("glyphs/svg", output_path)
     assert os.path.exists(output_path)
     assert os.path.getsize(output_path) > 100  # not an empty file
@@ -36,7 +36,7 @@ def test_create_regular_font(tmp_path):
     """Should create a valid TTF for Regular (hollow) weight."""
     from scripts.assemble import create_regular_font
 
-    output_path = str(tmp_path / "Mikdash-Regular.ttf")
+    output_path = str(tmp_path / "NewMikdash-Regular.ttf")
     create_regular_font("glyphs/svg", output_path)
     assert os.path.exists(output_path)
 
@@ -52,7 +52,7 @@ def test_font_has_combining_marks(tmp_path):
     from scripts.assemble import create_bold_font
     from scripts.helpers import COMBINING_CIRCLE, COMBINING_DIAMOND, STANDALONE_CIRCLE
 
-    output_path = str(tmp_path / "Mikdash-Bold.ttf")
+    output_path = str(tmp_path / "NewMikdash-Bold.ttf")
     create_bold_font("glyphs/svg", output_path)
 
     from fontTools.ttLib import TTFont
@@ -69,7 +69,7 @@ def test_font_has_gpos_mark_positioning(tmp_path):
     """Font should have GPOS table with mark-to-base positioning."""
     from scripts.assemble import create_bold_font
 
-    output_path = str(tmp_path / "Mikdash-Bold.ttf")
+    output_path = str(tmp_path / "NewMikdash-Bold.ttf")
     create_bold_font("glyphs/svg", output_path)
 
     from fontTools.ttLib import TTFont
@@ -82,7 +82,7 @@ def test_font_has_latin_and_numbers(tmp_path):
     """Font should include Latin letters and numbers from EB Garamond."""
     from scripts.assemble import create_bold_font
 
-    output_path = str(tmp_path / "Mikdash-Bold.ttf")
+    output_path = str(tmp_path / "NewMikdash-Bold.ttf")
     create_bold_font("glyphs/svg", output_path, donor_font="donor/EBGaramond-Bold.ttf")
 
     from fontTools.ttLib import TTFont

@@ -1,4 +1,4 @@
-"""Mikdash Font — Full build pipeline.
+"""NewMikdash Font — Full build pipeline.
 
 Usage: python scripts/build.py [--source font.jpg] [--output output/] [--donor donor/EBGaramond-Bold.ttf]
 """
@@ -22,7 +22,7 @@ def build_all(
 ) -> None:
     """Run the full pipeline: preprocess -> segment -> vectorize -> assemble."""
     print("=" * 60)
-    print("Mikdash Font Build Pipeline")
+    print("NewMikdash Font Build Pipeline")
     print("=" * 60)
 
     # Step 1: Preprocess
@@ -60,8 +60,8 @@ def build_all(
     print("\n[4/4] Assembling fonts...")
     os.makedirs(output_dir, exist_ok=True)
 
-    bold_path = os.path.join(output_dir, "Mikdash-Bold.ttf")
-    regular_path = os.path.join(output_dir, "Mikdash-Regular.ttf")
+    bold_path = os.path.join(output_dir, "NewMikdash-Bold.ttf")
+    regular_path = os.path.join(output_dir, "NewMikdash-Regular.ttf")
 
     create_bold_font("glyphs/svg", bold_path, donor_font=donor_font)
     create_regular_font("glyphs/svg", regular_path, donor_font=donor_font)
@@ -74,7 +74,7 @@ def build_all(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Build Mikdash font")
+    parser = argparse.ArgumentParser(description="Build NewMikdash font")
     parser.add_argument("--source", default="font.jpg", help="Source image path")
     parser.add_argument("--output", default="output", help="Output directory")
     parser.add_argument("--donor", default="donor/EBGaramond-Bold.ttf", help="Donor font path")

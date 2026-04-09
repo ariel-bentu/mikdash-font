@@ -1,9 +1,9 @@
-"""Build Mikdash fonts from an existing Hebrew OTF/TTF source.
+"""Build NewMikdash fonts from an existing Hebrew OTF/TTF source.
 
 Takes a source font with Hebrew glyphs, adds diamond/circle marks,
 GPOS positioning, Latin donor glyphs, and produces:
-  - Mikdash-Bold.ttf (filled, from source)
-  - Mikdash-Regular.ttf (hollow/outline version)
+  - NewMikdash-Bold.ttf (filled, from source)
+  - NewMikdash-Regular.ttf (hollow/outline version)
 """
 
 import os
@@ -494,7 +494,7 @@ def build_font_from_contours(
     full_name = f"{family_name} {style_name}"
     ps_name = f"{family_name}-{style_name}"
     fb.setupNameTable({
-        "copyright": "Copyright 2026, Mikdash Font Project",
+        "copyright": "Copyright 2026, NewMikdash Font Project",
         "familyName": family_name,
         "styleName": style_name,
         "uniqueFontIdentifier": f"1.000;NONE;{ps_name}",
@@ -537,7 +537,7 @@ def build_from_source(
     output_dir: str = "output",
     donor_font: str = None,
 ):
-    """Build Mikdash Bold + Regular from an existing Hebrew font."""
+    """Build NewMikdash Bold + Regular from an existing Hebrew font."""
     print(f"Extracting Hebrew glyphs from {source_font}...")
     glyph_contours = extract_glyph_contours(source_font)
     print(f"  Extracted {len(glyph_contours)} glyphs")
@@ -549,7 +549,7 @@ def build_from_source(
     mark_y = add_mark_glyphs(glyph_contours)
 
     # --- Bold ---
-    bold_path = os.path.join(output_dir, "Mikdash-Bold.ttf")
+    bold_path = os.path.join(output_dir, "NewMikdash-Bold.ttf")
     print(f"Building Bold -> {bold_path}")
     build_font_from_contours(glyph_contours, FONT_FAMILY, "Bold", bold_path)
     add_gpos_marks(bold_path, glyph_contours, mark_y)
@@ -579,7 +579,7 @@ def build_from_source(
             hollow = make_hollow_contours(contours, stroke_width=stroke_width)
             hollow_contours[name] = (hollow, adv_w)
 
-    regular_path = os.path.join(output_dir, "Mikdash-Regular.ttf")
+    regular_path = os.path.join(output_dir, "NewMikdash-Regular.ttf")
     print(f"Building Regular -> {regular_path}")
     build_font_from_contours(hollow_contours, FONT_FAMILY, "Regular", regular_path)
     add_gpos_marks(regular_path, glyph_contours, mark_y)

@@ -178,7 +178,7 @@ def build_font(
         of ``(x, y, on_curve)`` tuples. advance_width is an integer in
         font units.
     family_name : str
-        The font family name (e.g. ``"Mikdash"``).
+        The font family name (e.g. ``"NewMikdash"``).
     style_name : str
         The style/weight name (e.g. ``"Bold"``).
     output_path : str
@@ -214,7 +214,7 @@ def build_font(
     full_name = f"{family_name} {style_name}"
     ps_name = f"{family_name}-{style_name}"
     fb.setupNameTable({
-        "copyright": "Copyright 2026, Mikdash Font Project",
+        "copyright": "Copyright 2026, NewMikdash Font Project",
         "familyName": family_name,
         "styleName": style_name,
         "uniqueFontIdentifier": f"1.000;NONE;{ps_name}",
@@ -589,7 +589,7 @@ def make_hollow_contours(
 
 
 def create_regular_font(svg_dir: str, output_path: str, donor_font: str = None) -> None:
-    """Create the Regular (hollow) weight of Mikdash font.
+    """Create the Regular (hollow) weight of NewMikdash font.
 
     Works like :func:`create_bold_font` but applies :func:`make_hollow_contours`
     to each glyph after normalisation so the glyphs appear as outlines rather

@@ -1,4 +1,4 @@
-"""Shared constants for the Mikdash font pipeline."""
+"""Shared constants for the NewMikdash font pipeline."""
 
 # Hebrew letter names and their Unicode codepoints
 HEBREW_LETTERS = {
@@ -69,7 +69,7 @@ LINE_GAP = 0
 # Stroke width for hollow (Regular) glyphs, as fraction of UPM
 HOLLOW_STROKE_RATIO = 0.03  # 3% of em
 
-FONT_FAMILY = "Mikdash"
+FONT_FAMILY = "NewMikdash"
 
 # ---------------------------------------------------------------------------
 # SVG path parsing utilities

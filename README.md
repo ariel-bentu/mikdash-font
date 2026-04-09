@@ -1,11 +1,11 @@
-# Mikdash Font
+# NewMikdash Font
 
 A Hebrew font family designed for scholarly transcription of Dead Sea Scrolls and similar ancient texts. Features custom diacritical marks (diamond and circle above letters) used in academic publications.
 
 **Two weights:**
 
-- **Mikdash-Bold** — filled (solid) glyphs
-- **Mikdash-Regular** — hollow (outline) glyphs
+- **NewMikdash-Bold** — filled (solid) glyphs
+- **NewMikdash-Regular** — hollow (outline) glyphs
 
 ![Sample](https://raw.githubusercontent.com/ariel-bentu/mikdash-font/main/output/sample.png)
 
@@ -13,8 +13,8 @@ A Hebrew font family designed for scholarly transcription of Dead Sea Scrolls an
 
 Pre-built font files are in the [`output/`](output/) directory:
 
-- [`Mikdash-Bold.ttf`](output/Mikdash-Bold.ttf)
-- [`Mikdash-Regular.ttf`](output/Mikdash-Regular.ttf)
+- [`NewMikdash-Bold.ttf`](output/NewMikdash-Bold.ttf)
+- [`NewMikdash-Regular.ttf`](output/NewMikdash-Regular.ttf)
 
 Install by double-clicking the `.ttf` files (macOS/Windows) or copying them to your system font directory.
 
@@ -106,7 +106,7 @@ The primary build extracts Hebrew glyphs from [FrankRuehlCLM](https://culmus.sou
 python -m scripts.assemble_from_font
 ```
 
-Output: `output/Mikdash-Bold.ttf` and `output/Mikdash-Regular.ttf`
+Output: `output/NewMikdash-Bold.ttf` and `output/NewMikdash-Regular.ttf`
 
 There is also a full image-based pipeline that extracts glyphs from a scanned page (`font.jpg`):
 
@@ -153,7 +153,7 @@ As required by GPL v2, the complete source code for building this font is includ
 
 ### Redistribution
 
-If you redistribute Mikdash (modified or unmodified), you must:
+If you redistribute NewMikdash (modified or unmodified), you must:
 
 1. Include a copy of the GPL v2 license ([LICENSE](LICENSE))
 2. Include the source code or a written offer to provide it
