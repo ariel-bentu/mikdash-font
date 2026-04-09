@@ -79,7 +79,9 @@ Each letter+mark combination also exists as a single glyph at a Private Use Area
 
 ### Test Page
 
-Open [`test.html`](test.html) in a browser for an interactive preview with all glyphs and a textarea where you can type with the special marks.
+**[Live test page](https://ariel-bentu.github.io/mikdash-font/test.html)** — interactive preview with all glyphs and a textarea where you can type with the special marks.
+
+Or open [`test.html`](test.html) locally after cloning.
 
 ## Building from Source
 
