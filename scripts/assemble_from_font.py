@@ -247,12 +247,12 @@ def add_mark_glyphs(glyph_contours):
         [[(x, y + mark_y, on) for x, y, on in c] for c in circle_template], 0
     )
 
-    # --- Standalone circle ---
-    standalone = create_circle_contours(radius=100, hollow=True, segments=32)
-    standalone_x = 120
+    # --- Standalone circle (same size as combining circle mark) ---
+    standalone = create_circle_contours(radius=80, hollow=True, segments=32)
+    standalone_x = 100
     standalone_y = typical_top // 2
     glyph_contours["circle_standalone"] = (
-        [[(x + standalone_x, y + standalone_y, on) for x, y, on in c] for c in standalone], 240
+        [[(x + standalone_x, y + standalone_y, on) for x, y, on in c] for c in standalone], 200
     )
 
     # --- Hebrew combining marks (zero-width, positioned by GPOS) ---
@@ -439,6 +439,7 @@ def build_font_from_contours(
     family_name: str,
     style_name: str,
     output_path: str,
+    is_italic: bool = False,
 ) -> None:
     glyph_names = [".notdef"] + sorted(glyph_contours.keys())
 
@@ -503,15 +504,24 @@ def build_font_from_contours(
         "psName": ps_name,
     })
 
+    fs_selection = 0
+    if is_italic:
+        fs_selection |= 0x0001  # ITALIC
+    else:
+        fs_selection |= 0x0040  # REGULAR
+
     fb.setupOS2(
         sTypoAscender=ASCENDER,
         sTypoDescender=DESCENDER,
         sTypoLineGap=LINE_GAP,
+        fsSelection=fs_selection,
     )
-    fb.setupPost()
+    fb.setupPost(isFixedPitch=0, italicAngle=-12 if is_italic else 0)
 
     now = calendar.timegm(time.gmtime())
-    fb.setupHead(unitsPerEm=UNITS_PER_EM, created=now, modified=now)
+    mac_style = 0x0002 if is_italic else 0x0000  # bit 1 = italic
+    fb.setupHead(unitsPerEm=UNITS_PER_EM, created=now, modified=now,
+                 macStyle=mac_style)
 
     gasp = newTable("gasp")
     gasp.version = 1
@@ -537,7 +547,7 @@ def build_from_source(
     output_dir: str = "output",
     donor_font: str = None,
 ):
-    """Build NewMikdash Bold + Regular from an existing Hebrew font."""
+    """Build NewMikdash Regular (filled) + Italic (hollow) from an existing Hebrew font."""
     print(f"Extracting Hebrew glyphs from {source_font}...")
     glyph_contours = extract_glyph_contours(source_font)
     print(f"  Extracted {len(glyph_contours)} glyphs")
@@ -548,15 +558,16 @@ def build_from_source(
     # Add marks and pre-composed letter+mark glyphs
     mark_y = add_mark_glyphs(glyph_contours)
 
-    # --- Bold ---
-    bold_path = os.path.join(output_dir, "NewMikdash-Bold.ttf")
-    print(f"Building Bold -> {bold_path}")
-    build_font_from_contours(glyph_contours, FONT_FAMILY, "Bold", bold_path)
-    add_gpos_marks(bold_path, glyph_contours, mark_y)
+    # --- Regular (filled) ---
+    regular_path = os.path.join(output_dir, "NewMikdash-Regular.ttf")
+    print(f"Building Regular (filled) -> {regular_path}")
+    build_font_from_contours(glyph_contours, FONT_FAMILY, "Regular", regular_path,
+                             is_italic=False)
+    add_gpos_marks(regular_path, glyph_contours, mark_y)
     if donor_font and os.path.exists(donor_font):
-        merge_donor_glyphs(bold_path, donor_font)
+        merge_donor_glyphs(regular_path, donor_font)
 
-    # --- Regular (hollow) ---
+    # --- Italic (hollow) ---
     stroke_width = int(UNITS_PER_EM * 0.03)
     hollow_contours = {}
     skip_hollow = {"diamond_above", "circle_above", "circle_standalone",
@@ -579,12 +590,13 @@ def build_from_source(
             hollow = make_hollow_contours(contours, stroke_width=stroke_width)
             hollow_contours[name] = (hollow, adv_w)
 
-    regular_path = os.path.join(output_dir, "NewMikdash-Regular.ttf")
-    print(f"Building Regular -> {regular_path}")
-    build_font_from_contours(hollow_contours, FONT_FAMILY, "Regular", regular_path)
-    add_gpos_marks(regular_path, glyph_contours, mark_y)
+    italic_path = os.path.join(output_dir, "NewMikdash-Italic.ttf")
+    print(f"Building Italic (hollow) -> {italic_path}")
+    build_font_from_contours(hollow_contours, FONT_FAMILY, "Italic", italic_path,
+                             is_italic=True)
+    add_gpos_marks(italic_path, glyph_contours, mark_y)
     if donor_font and os.path.exists(donor_font):
-        merge_donor_glyphs(regular_path, donor_font)
+        merge_donor_glyphs(italic_path, donor_font)
 
     print("Done!")
 

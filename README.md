@@ -2,10 +2,10 @@
 
 A Hebrew font family designed for scholarly transcription of Dead Sea Scrolls and similar ancient texts. Features custom diacritical marks (diamond and circle above letters) used in academic publications.
 
-**Two weights:**
+**Two styles:**
 
-- **NewMikdash-Bold** — filled (solid) glyphs
-- **NewMikdash-Regular** — hollow (outline) glyphs
+- **NewMikdash Regular** — filled (solid) glyphs
+- **NewMikdash Italic** — hollow (outline) glyphs — select with Ctrl/Cmd+I in Word
 
 ![Sample](https://raw.githubusercontent.com/ariel-bentu/mikdash-font/main/output/sample.png)
 
@@ -13,8 +13,8 @@ A Hebrew font family designed for scholarly transcription of Dead Sea Scrolls an
 
 Pre-built font files are in the [`output/`](output/) directory:
 
-- [`NewMikdash-Bold.ttf`](output/NewMikdash-Bold.ttf)
 - [`NewMikdash-Regular.ttf`](output/NewMikdash-Regular.ttf)
+- [`NewMikdash-Italic.ttf`](output/NewMikdash-Italic.ttf)
 
 Install by double-clicking the `.ttf` files (macOS/Windows) or copying them to your system font directory.
 
@@ -106,7 +106,7 @@ The primary build extracts Hebrew glyphs from [FrankRuehlCLM](https://culmus.sou
 python -m scripts.assemble_from_font
 ```
 
-Output: `output/NewMikdash-Bold.ttf` and `output/NewMikdash-Regular.ttf`
+Output: `output/NewMikdash-Regular.ttf` and `output/NewMikdash-Italic.ttf`
 
 There is also a full image-based pipeline that extracts glyphs from a scanned page (`font.jpg`):
 
@@ -126,8 +126,8 @@ python -m pytest tests/ -v
 2. Side bearings are normalized to 6% of ink width for consistent letter spacing
 3. **Combining marks** are added using hijacked Hebrew codepoints (U+05C4 → diamond, U+05AF → circle) with GPOS mark-to-base anchors that auto-center the mark above any letter
 4. Pre-composed PUA glyphs (U+E100–E135) are also generated as a fallback — each is a single glyph with the mark baked in
-5. **Bold** uses the filled contours directly
-6. **Regular** applies an inward polygon offset (via pyclipper) to create hollow outlines
+5. **Regular** uses the filled contours directly
+6. **Italic** applies an inward polygon offset (via pyclipper) to create hollow outlines
 7. Latin characters, numbers, and punctuation are merged from EB Garamond
 
 ### Two Mark Approaches

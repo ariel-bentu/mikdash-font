@@ -6,15 +6,15 @@
 <style>
 @font-face {
     font-family: 'NewMikdash';
-    src: url('output/NewMikdash-Bold.ttf') format('truetype');
-    font-weight: bold;
+    src: url('output/NewMikdash-Regular.ttf') format('truetype');
+    font-weight: normal;
     font-style: normal;
 }
 @font-face {
     font-family: 'NewMikdash';
-    src: url('output/NewMikdash-Regular.ttf') format('truetype');
+    src: url('output/NewMikdash-Italic.ttf') format('truetype');
     font-weight: normal;
-    font-style: normal;
+    font-style: italic;
 }
 
 body {
@@ -36,8 +36,8 @@ h2 { font-family: sans-serif; direction: ltr; font-size: 14px; color: #999; marg
     border: 1px solid #ddd;
     border-radius: 4px;
 }
-.bold { font-weight: bold; }
-.regular { font-weight: normal; }
+.filled { font-style: normal; }
+.hollow { font-style: italic; }
 
 .alphabet {
     font-size: 36px;
@@ -113,7 +113,7 @@ textarea {
 .info .demo {
     font-family: 'NewMikdash', serif;
     font-size: 32px;
-    font-weight: bold;
+    font-weight: normal;
     vertical-align: middle;
 }
 .info table { border-collapse: collapse; margin: 10px 0; font-size: 13px; }
@@ -125,30 +125,30 @@ textarea {
 <h1>NewMikdash Font Test Page</h1>
 
 <!-- ============================================================ -->
-<h2>Bold — Full Alphabet</h2>
-<div class="sample bold alphabet">
+<h2>Regular (Filled) — Full Alphabet</h2>
+<div class="sample filled alphabet">
 אבגדהוזחטיכךלמםנןסעפףצץקרשת
 </div>
 
-<h2>Regular (Hollow) — Full Alphabet</h2>
-<div class="sample regular alphabet">
+<h2>Italic (Hollow) — Full Alphabet</h2>
+<div class="sample hollow alphabet">
 אבגדהוזחטיכךלמםנןסעפףצץקרשת
 </div>
 
 <!-- ============================================================ -->
-<h2>Bold — Sample Text</h2>
-<div class="sample bold" style="font-size:28px; line-height:1.8;">
+<h2>Regular — Sample Text</h2>
+<div class="sample filled" style="font-size:28px; line-height:1.8;">
 מגילות מדבר יהודה, המכונות גם מגילות ים המלח, המגילות הגנוזות ומגילות קומראן, הן מגילות שהתגלו במערות קומראן, מורבעת, נחל חבר (מערת האימה ומערת האיגרות), נחל צאלים ועל המצדה שבמדבר יהודה ובאתרים נוספים באזור, בעיקר בין השנים 1947–1956.
 </div>
 
-<h2>Regular — Sample Text</h2>
-<div class="sample regular" style="font-size:28px; line-height:1.8;">
+<h2>Italic — Sample Text</h2>
+<div class="sample hollow" style="font-size:28px; line-height:1.8;">
 גילוי המגילות נחשב לאחד הממצאים הארכאולוגיים החשובים בארץ ישראל. למגילות חשיבות היסטורית ודתית רבה, מאחר שתקופת כתיבת חלק גדול מביניהן מתוארכת למאה השנייה והראשונה לפני הספירה – והמוקדמות ביותר אף למאה השלישית לפני הספירה – כך שאלו כתבי היד העבריים, כולם כתבי קודש והרחבות לכתבי הקודש, הקדומים ביותר הכוללים עד נוסח למקרא שנמצאו, למעט שתי לוחיות ברכת כהנים המתוארכות למאה ה-6 לפני הספירה. רוב המגילות הן קלף ומקצתן פפירוס. אף שקטעים מן הכתוב במגילות ניזוקו ללא תקנה, עדיין רבים מהקטעים, ואף מגילות בשלמותן, נשמרו היטב בשל האקלים הצחיח השורר בבקעת ים המלח. רוב המגילות כתובות בעברית, כשליש מהן בארמית ויתרתן ביוונית.
 </div>
 
 <!-- ============================================================ -->
-<h2>Diamond Above — Combining (Bold)</h2>
-<div class="mark-grid bold">
+<h2>Diamond Above — Combining (Regular)</h2>
+<div class="mark-grid filled">
 <div class="cell">א&#x05C4;<span class="label">alef</span></div>
 <div class="cell">ב&#x05C4;<span class="label">bet</span></div>
 <div class="cell">ג&#x05C4;<span class="label">gimel</span></div>
@@ -178,8 +178,8 @@ textarea {
 <div class="cell">ת&#x05C4;<span class="label">tav</span></div>
 </div>
 
-<h2>Circle Above — Combining (Bold)</h2>
-<div class="mark-grid bold">
+<h2>Circle Above — Combining (Regular)</h2>
+<div class="mark-grid filled">
 <div class="cell">א&#x05AF;<span class="label">alef</span></div>
 <div class="cell">ב&#x05AF;<span class="label">bet</span></div>
 <div class="cell">ג&#x05AF;<span class="label">gimel</span></div>
@@ -209,8 +209,8 @@ textarea {
 <div class="cell">ת&#x05AF;<span class="label">tav</span></div>
 </div>
 
-<h2>Diamond Above — Combining (Regular)</h2>
-<div class="mark-grid regular">
+<h2>Diamond Above — Combining (Italic)</h2>
+<div class="mark-grid hollow">
 <div class="cell">א&#x05C4;</div><div class="cell">ב&#x05C4;</div><div class="cell">ג&#x05C4;</div>
 <div class="cell">ד&#x05C4;</div><div class="cell">ה&#x05C4;</div><div class="cell">ו&#x05C4;</div>
 <div class="cell">ז&#x05C4;</div><div class="cell">ח&#x05C4;</div><div class="cell">ט&#x05C4;</div>
@@ -222,8 +222,8 @@ textarea {
 <div class="cell">ר&#x05C4;</div><div class="cell">ש&#x05C4;</div><div class="cell">ת&#x05C4;</div>
 </div>
 
-<h2>Circle Above — Combining (Regular)</h2>
-<div class="mark-grid regular">
+<h2>Circle Above — Combining (Italic)</h2>
+<div class="mark-grid hollow">
 <div class="cell">א&#x05AF;</div><div class="cell">ב&#x05AF;</div><div class="cell">ג&#x05AF;</div>
 <div class="cell">ד&#x05AF;</div><div class="cell">ה&#x05AF;</div><div class="cell">ו&#x05AF;</div>
 <div class="cell">ז&#x05AF;</div><div class="cell">ח&#x05AF;</div><div class="cell">ט&#x05AF;</div>
@@ -237,18 +237,18 @@ textarea {
 
 <!-- ============================================================ -->
 <h2>Marks — In Context</h2>
-<div class="sample bold" style="line-height:2.2">
+<div class="sample filled" style="line-height:2.2">
 ב&#x05C4;ראשית ברא א&#x05AF;ל&#x05AF;ים את ה&#x05C4;שמים ○ ואת הארץ
 </div>
 
 <h2>Standalone Marks</h2>
-<div class="sample bold">
+<div class="sample filled">
 Diamond: &#xE001; &nbsp; Circle: ○
 </div>
 
 <!-- ============================================================ -->
-<h2>Size Comparison (Bold)</h2>
-<div class="sample bold size-test">
+<h2>Size Comparison (Regular)</h2>
+<div class="sample filled size-test">
 <span class="s24">שלום 24px</span>
 <span class="s36">שלום 36px</span>
 <span class="s48">שלום 48px</span>
@@ -257,14 +257,14 @@ Diamond: &#xE001; &nbsp; Circle: ○
 </div>
 
 <h2>Latin / Numbers (from EB Garamond donor)</h2>
-<div class="sample bold latin">
+<div class="sample filled latin">
 ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>
 abcdefghijklmnopqrstuvwxyz<br>
 0123456789 .,:;!?-—'"()[]
 </div>
 
 <h2>Mixed Hebrew + Latin</h2>
-<div class="sample bold">
+<div class="sample filled">
 מגילה VII קטע 3 — שורה 12
 </div>
 
@@ -276,7 +276,7 @@ abcdefghijklmnopqrstuvwxyz<br>
     <button onclick="insertChar('\u25CB')" style="font-size:14px; padding:4px 12px; cursor:pointer;">&#x25CB; Insert Standalone Circle</button>
     <span style="color:#999; margin-left:12px;">Type Hebrew, place cursor after a letter, click a mark button.</span>
 </div>
-<textarea id="tryarea" class="bold" placeholder="הקלד כאן...">בראשית ברא אלהים</textarea>
+<textarea id="tryarea" class="filled" placeholder="הקלד כאן...">בראשית ברא אלהים</textarea>
 <script>
 function insertCombining(code) {
     var ch = String.fromCodePoint(parseInt(code, 16));
@@ -324,6 +324,26 @@ Type a Hebrew letter, then type the combining character right after it. The mark
     <td><span class="demo">○</span></td>
 </tr>
 </table>
+
+<br>
+<b>Copy characters for Text Replacements:</b><br>
+<span style="font-size:13px; color:#666;">Click a button to copy the invisible combining character to your clipboard, then paste it into System Settings → Keyboard → Text Replacements.</span>
+<div style="margin:8px 0; display:flex; gap:10px;">
+    <button onclick="copyChar('\u05C4')" style="font-size:14px; padding:6px 16px; cursor:pointer;">&#x25C6; Copy Diamond (U+05C4)</button>
+    <button onclick="copyChar('\u05AF')" style="font-size:14px; padding:6px 16px; cursor:pointer;">&#x25CB; Copy Circle (U+05AF)</button>
+    <button onclick="copyChar('\u25CB')" style="font-size:14px; padding:6px 16px; cursor:pointer;">&#x25CB; Copy Standalone Circle (U+25CB)</button>
+</div>
+<div id="copyMsg" style="font-size:13px; color:green; min-height:20px;"></div>
+<script>
+function copyChar(ch) {
+    navigator.clipboard.writeText(ch).then(function() {
+        var msg = document.getElementById('copyMsg');
+        var hex = ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
+        msg.textContent = '\u2713 Copied U+' + hex + ' to clipboard!';
+        setTimeout(function() { msg.textContent = ''; }, 3000);
+    });
+}
+</script>
 
 <br>
 <b>macOS tips:</b>
