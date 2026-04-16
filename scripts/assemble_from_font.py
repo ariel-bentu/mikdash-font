@@ -213,13 +213,17 @@ def _mark_anchor_x(base_name, base_contours, base_adv_w, mark_type="diamond"):
     return base_adv_w // 2
 
 
-def add_mark_glyphs(glyph_contours):
+def add_mark_glyphs(glyph_contours, filled_circle=False):
     """Add standalone marks and pre-composed letter+mark glyphs.
 
     Each letter+mark combination gets its own PUA codepoint (mapped in
     COMPOSED_DIAMOND / COMPOSED_CIRCLE). No GSUB or GPOS needed — the
     user types a single codepoint and gets a glyph with the mark baked
     in at the correct position.
+
+    filled_circle: if True, standalone circle is solid (Regular weight).
+                   if False, standalone circle is hollow outline (Italic weight).
+                   Circle marks above letters are always hollow regardless.
     """
     # Find the typical top of base glyphs (75th percentile)
     glyph_tops = []
@@ -233,22 +237,25 @@ def add_mark_glyphs(glyph_contours):
     glyph_tops.sort()
     typical_top = glyph_tops[len(glyph_tops) * 3 // 4]
 
-    mark_y = typical_top + 150
+    diamond_y = typical_top + 150
+    # Circle raised by 1/5 of its diameter (radius=80, diam=160, 1/5=32)
+    circle_y = diamond_y + 32
 
     # Mark contour templates (centered at x=0)
     diamond_template = create_diamond_contours(size=160)
+    # Circle above letters is always hollow
     circle_template = create_circle_contours(radius=80, hollow=True, segments=32)
 
     # --- Standalone mark glyphs ---
     glyph_contours["diamond_above"] = (
-        [[(x, y + mark_y, on) for x, y, on in c] for c in diamond_template], 0
+        [[(x, y + diamond_y, on) for x, y, on in c] for c in diamond_template], 0
     )
     glyph_contours["circle_above"] = (
-        [[(x, y + mark_y, on) for x, y, on in c] for c in circle_template], 0
+        [[(x, y + circle_y, on) for x, y, on in c] for c in circle_template], 0
     )
 
-    # --- Standalone circle (same size as combining circle mark) ---
-    standalone = create_circle_contours(radius=80, hollow=True, segments=32)
+    # --- Standalone circle — filled in Regular, hollow in Italic ---
+    standalone = create_circle_contours(radius=80, hollow=not filled_circle, segments=32)
     standalone_x = 100
     standalone_y = typical_top // 2
     glyph_contours["circle_standalone"] = (
@@ -259,10 +266,10 @@ def add_mark_glyphs(glyph_contours):
     # These use real Hebrew codepoints so they stay in the same shaping run.
     # Contours centered at x=0; GPOS mark-to-base anchors handle positioning.
     glyph_contours["hebrew_diamond"] = (
-        [[(x, y + mark_y, on) for x, y, on in c] for c in diamond_template], 0
+        [[(x, y + diamond_y, on) for x, y, on in c] for c in diamond_template], 0
     )
     glyph_contours["hebrew_circle"] = (
-        [[(x, y + mark_y, on) for x, y, on in c] for c in circle_template], 0
+        [[(x, y + circle_y, on) for x, y, on in c] for c in circle_template], 0
     )
 
     # --- Pre-composed letter+mark glyphs (one PUA codepoint each) ---
@@ -277,7 +284,7 @@ def add_mark_glyphs(glyph_contours):
         # letter + diamond
         diamond_x = _mark_anchor_x(base_name, base_contours, base_adv_w, "diamond")
         diamond_contours = [
-            [(x + diamond_x, y + mark_y, on) for x, y, on in c]
+            [(x + diamond_x, y + diamond_y, on) for x, y, on in c]
             for c in diamond_template
         ]
         glyph_contours[f"{base_name}_diamond"] = (
@@ -287,17 +294,17 @@ def add_mark_glyphs(glyph_contours):
         # letter + circle
         circle_x = _mark_anchor_x(base_name, base_contours, base_adv_w, "circle")
         circle_contours_mark = [
-            [(x + circle_x, y + mark_y, on) for x, y, on in c]
+            [(x + circle_x, y + circle_y, on) for x, y, on in c]
             for c in circle_template
         ]
         glyph_contours[f"{base_name}_circle"] = (
             list(base_contours) + circle_contours_mark, base_adv_w
         )
 
-    return mark_y
+    return diamond_y, circle_y
 
 
-def add_gpos_marks(font_path, glyph_contours, mark_y):
+def add_gpos_marks(font_path, glyph_contours, diamond_y, circle_y):
     """Add GPOS mark-to-base positioning for Hebrew combining marks.
 
     Uses separate lookups for diamond and circle so that per-letter
@@ -324,11 +331,11 @@ def add_gpos_marks(font_path, glyph_contours, mark_y):
     # Separate mark class + lookup for each mark type
     if has_diamond:
         lines.append(
-            "markClass hebrew_diamond <anchor 0 %d> @mark_diamond;" % mark_y
+            "markClass hebrew_diamond <anchor 0 %d> @mark_diamond;" % diamond_y
         )
     if has_circle:
         lines.append(
-            "markClass hebrew_circle <anchor 0 %d> @mark_circle;" % mark_y
+            "markClass hebrew_circle <anchor 0 %d> @mark_circle;" % circle_y
         )
 
     lines.append("feature mark {")
@@ -340,7 +347,7 @@ def add_gpos_marks(font_path, glyph_contours, mark_y):
             anchor_x = _mark_anchor_x(base_name, base_contours, adv_w, "diamond")
             lines.append(
                 "    pos base %s <anchor %d %d> mark @mark_diamond;"
-                % (base_name, anchor_x, mark_y)
+                % (base_name, anchor_x, diamond_y)
             )
         lines.append("  } mark2base_diamond;")
 
@@ -351,7 +358,7 @@ def add_gpos_marks(font_path, glyph_contours, mark_y):
             anchor_x = _mark_anchor_x(base_name, base_contours, adv_w, "circle")
             lines.append(
                 "    pos base %s <anchor %d %d> mark @mark_circle;"
-                % (base_name, anchor_x, mark_y)
+                % (base_name, anchor_x, circle_y)
             )
         lines.append("  } mark2base_circle;")
 
@@ -555,31 +562,36 @@ def build_from_source(
     # Normalise side bearings for consistent inter-letter spacing
     glyph_contours = normalize_side_bearings(glyph_contours)
 
-    # Add marks and pre-composed letter+mark glyphs
-    mark_y = add_mark_glyphs(glyph_contours)
+    # Add marks and pre-composed letter+mark glyphs (filled circle for Regular)
+    regular_contours = dict(glyph_contours)  # copy base glyphs
+    diamond_y, circle_y = add_mark_glyphs(regular_contours, filled_circle=True)
 
     # --- Regular (filled) ---
     regular_path = os.path.join(output_dir, "NewMikdash-Regular.ttf")
     print(f"Building Regular (filled) -> {regular_path}")
-    build_font_from_contours(glyph_contours, FONT_FAMILY, "Regular", regular_path,
+    build_font_from_contours(regular_contours, FONT_FAMILY, "Regular", regular_path,
                              is_italic=False)
-    add_gpos_marks(regular_path, glyph_contours, mark_y)
+    add_gpos_marks(regular_path, regular_contours, diamond_y, circle_y)
     if donor_font and os.path.exists(donor_font):
         merge_donor_glyphs(regular_path, donor_font)
+
+    # Add marks for Italic (hollow circle)
+    italic_base_contours = dict(glyph_contours)  # fresh copy of base glyphs
+    diamond_y_i, circle_y_i = add_mark_glyphs(italic_base_contours, filled_circle=False)
 
     # --- Italic (hollow) ---
     stroke_width = int(UNITS_PER_EM * 0.03)
     hollow_contours = {}
     skip_hollow = {"diamond_above", "circle_above", "circle_standalone",
                    "hebrew_diamond", "hebrew_circle"}
-    for name, (contours, adv_w) in glyph_contours.items():
+    for name, (contours, adv_w) in italic_base_contours.items():
         if name in skip_hollow:
             hollow_contours[name] = (contours, adv_w)
         elif "_diamond" in name or "_circle" in name:
             # Composed glyph: hollow only the base part, keep mark as-is
             base_name = name.rsplit("_", 1)[0]
-            if base_name in glyph_contours:
-                n_base = len(glyph_contours[base_name][0])
+            if base_name in italic_base_contours:
+                n_base = len(italic_base_contours[base_name][0])
                 base_part = contours[:n_base]
                 mark_part = contours[n_base:]
                 hollow_base = make_hollow_contours(base_part, stroke_width=stroke_width)
@@ -594,7 +606,7 @@ def build_from_source(
     print(f"Building Italic (hollow) -> {italic_path}")
     build_font_from_contours(hollow_contours, FONT_FAMILY, "Italic", italic_path,
                              is_italic=True)
-    add_gpos_marks(italic_path, glyph_contours, mark_y)
+    add_gpos_marks(italic_path, italic_base_contours, diamond_y_i, circle_y_i)
     if donor_font and os.path.exists(donor_font):
         merge_donor_glyphs(italic_path, donor_font)
 
