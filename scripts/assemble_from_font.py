@@ -213,7 +213,7 @@ def _mark_anchor_x(base_name, base_contours, base_adv_w, mark_type="diamond"):
     return base_adv_w // 2
 
 
-def add_mark_glyphs(glyph_contours, filled_circle=False):
+def add_mark_glyphs(glyph_contours):
     """Add standalone marks and pre-composed letter+mark glyphs.
 
     Each letter+mark combination gets its own PUA codepoint (mapped in
@@ -221,9 +221,7 @@ def add_mark_glyphs(glyph_contours, filled_circle=False):
     user types a single codepoint and gets a glyph with the mark baked
     in at the correct position.
 
-    filled_circle: if True, standalone circle is solid (Regular weight).
-                   if False, standalone circle is hollow outline (Italic weight).
-                   Circle marks above letters are always hollow regardless.
+    Circle marks (above letters and standalone) are always hollow in both weights.
     """
     # Find the typical top of base glyphs (75th percentile)
     glyph_tops = []
@@ -254,8 +252,8 @@ def add_mark_glyphs(glyph_contours, filled_circle=False):
         [[(x, y + circle_y, on) for x, y, on in c] for c in circle_template], 0
     )
 
-    # --- Standalone circle — filled in Regular, hollow in Italic ---
-    standalone = create_circle_contours(radius=80, hollow=not filled_circle, segments=32)
+    # --- Standalone circle — always hollow in both weights ---
+    standalone = create_circle_contours(radius=80, hollow=True, segments=32)
     standalone_x = 100
     standalone_y = typical_top // 2
     glyph_contours["circle_standalone"] = (
@@ -564,7 +562,7 @@ def build_from_source(
 
     # Add marks and pre-composed letter+mark glyphs (filled circle for Regular)
     regular_contours = dict(glyph_contours)  # copy base glyphs
-    diamond_y, circle_y = add_mark_glyphs(regular_contours, filled_circle=True)
+    diamond_y, circle_y = add_mark_glyphs(regular_contours)
 
     # --- Regular (filled) ---
     regular_path = os.path.join(output_dir, "NewMikdash-Regular.ttf")
@@ -577,7 +575,7 @@ def build_from_source(
 
     # Add marks for Italic (hollow circle)
     italic_base_contours = dict(glyph_contours)  # fresh copy of base glyphs
-    diamond_y_i, circle_y_i = add_mark_glyphs(italic_base_contours, filled_circle=False)
+    diamond_y_i, circle_y_i = add_mark_glyphs(italic_base_contours)
 
     # --- Italic (hollow) ---
     stroke_width = int(UNITS_PER_EM * 0.03)
