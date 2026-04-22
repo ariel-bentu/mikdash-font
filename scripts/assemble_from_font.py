@@ -191,7 +191,7 @@ def create_circle_contours(radius: int = 100, hollow: bool = True, segments: int
                        round(radius * math.sin(angle)), True))
     contours = [outer]
     if hollow:
-        inner_r = max(radius - 20, radius * 2 // 3)
+        inner_r = radius * 3 // 5  # thicker wall: 40% of radius vs old ~25%
         inner = []
         for i in range(segments):
             angle = 2 * math.pi * (segments - 1 - i) / segments
@@ -254,10 +254,10 @@ def add_mark_glyphs(glyph_contours):
 
     # --- Standalone circle — always hollow in both weights ---
     standalone = create_circle_contours(radius=80, hollow=True, segments=32)
-    standalone_x = 100
+    standalone_x = 100 + 72  # extra radius of padding on left (radius*0.9)
     standalone_y = typical_top // 2
     glyph_contours["circle_standalone"] = (
-        [[(x + standalone_x, y + standalone_y, on) for x, y, on in c] for c in standalone], 200
+        [[(x + standalone_x, y + standalone_y, on) for x, y, on in c] for c in standalone], 344
     )
 
     # --- Hebrew combining marks (zero-width, positioned by GPOS) ---
